@@ -1,0 +1,122 @@
+{
+ "ATL": {
+  "level": "a1",
+  "why": "Used a prior-season trade exception (Clint Capela) to acquire Devin Carter"
+ },
+ "BOS": {
+  "level": "a1",
+  "why": "Used the Non-Taxpayer MLE to sign Mitchell Robinson"
+ },
+ "BKN": {
+  "level": "none",
+  "why": "Not hard-capped"
+ },
+ "CHA": {
+  "level": "a1",
+  "why": "Used the Non-Taxpayer MLE to acquire Dorian Finney-Smith"
+ },
+ "CHI": {
+  "level": "a1",
+  "why": "Used a prior-season trade exception (Coby White) to acquire Kam Jones"
+ },
+ "CLE": {
+  "level": "a2",
+  "why": "Hard-capped at the second apron per JJNBA's hard-cap tracking"
+ },
+ "DAL": {
+  "level": "a1",
+  "why": "Used the expanded TPE for Santi Aldama and the Bi-Annual for Marcus Sasser"
+ },
+ "DEN": {
+  "level": "none",
+  "why": "Not hard-capped"
+ },
+ "DET": {
+  "level": "a1",
+  "why": "Used the Non-Taxpayer MLE to acquire Isaiah Joe"
+ },
+ "GSW": {
+  "level": "a2",
+  "why": "Hard-capped at the second apron per JJNBA's hard-cap tracking"
+ },
+ "HOU": {
+  "level": "a2",
+  "why": "Hard-capped at the second apron per JJNBA's hard-cap tracking"
+ },
+ "IND": {
+  "level": "a1",
+  "why": "Used the Non-Taxpayer MLE to sign Kelly Oubre Jr."
+ },
+ "LAC": {
+  "level": "a1",
+  "why": "Used the Non-Taxpayer MLE to sign Rui Hachimura"
+ },
+ "LAL": {
+  "level": "a1",
+  "why": "Acquired Walker Kessler via sign-and-trade"
+ },
+ "MEM": {
+  "level": "a1",
+  "why": "Used the expanded TPE to acquire Isaiah Stewart, D'Angelo Russell and AJ Johnson"
+ },
+ "MIA": {
+  "level": "a1",
+  "why": "Used the expanded TPE to acquire Giannis Antetokounmpo; used a prior-offseason TPE (Duncan Robinson) for Bobby Portis"
+ },
+ "MIL": {
+  "level": "a1",
+  "why": "Used the expanded TPE to acquire Caris LeVert (July 2026 report; a hard cap lasts the full league year)"
+ },
+ "MIN": {
+  "level": "a2",
+  "why": "Hard-capped at the second apron per JJNBA's hard-cap tracking"
+ },
+ "NOP": {
+  "level": "none",
+  "why": "Not hard-capped"
+ },
+ "NYK": {
+  "level": "none",
+  "why": "Not hard-capped"
+ },
+ "OKC": {
+  "level": "none",
+  "why": "Not hard-capped"
+ },
+ "ORL": {
+  "level": "none",
+  "why": "Not hard-capped"
+ },
+ "PHI": {
+  "level": "a1",
+  "why": "Used the Non-Taxpayer MLE to sign Dean Wade"
+ },
+ "PHX": {
+  "level": "a2",
+  "why": "Sent out cash in a trade"
+ },
+ "POR": {
+  "level": "a1",
+  "why": "Used the expanded TPE to acquire Ja Morant"
+ },
+ "SAC": {
+  "level": "a1",
+  "why": "Used the Bi-Annual Exception to sign Precious Achiuwa"
+ },
+ "SAS": {
+  "level": "a1",
+  "why": "Used the Non-Taxpayer MLE to sign Tobias Harris"
+ },
+ "TOR": {
+  "level": "a1",
+  "why": "Hard-capped at the first apron per JJNBA's hard-cap tracking"
+ },
+ "UTA": {
+  "level": "a1",
+  "why": "Used the Non-Taxpayer MLE to sign Jaxson Hayes"
+ },
+ "WAS": {
+  "level": "a1",
+  "why": "Used a prior-offseason TPE (Kelly Olynyk) to acquire Deandre Ayton"
+ }
+}
