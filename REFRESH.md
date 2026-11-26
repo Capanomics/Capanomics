@@ -58,11 +58,11 @@ Build the file from both: `p` = active rows (cap27 copied from the existing file
 
 ## 5. Build, check, publish
 ```
-python3 scripts/build.py      # data/ -> data.json -> public/index.html
+python3 scripts/build.py      # data/ -> data.json -> public/ (one page per team)
 python3 scripts/validate.py   # exit 0 = PASS
 ```
 Set `data/meta.json` `asof` to today's date (America/New_York) before building.
-- **PASS**: commit `data/`, `public/index.html` with message `Data refresh YYYY-MM-DD: <short summary>` and push to `main`.
+- **PASS**: commit `data/` and `public/` (all generated pages, sitemap.xml, robots.txt) with message `Data refresh YYYY-MM-DD: <short summary>` and push to `main`.
 - **FAIL**: do not push to `main`. Push the work to a branch `data-held-YYYY-MM-DD` instead, and report which checks failed.
 
 ## 6. Stop and ask a human when

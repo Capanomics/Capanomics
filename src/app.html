@@ -170,14 +170,14 @@ footer a{color:var(--ink2)}
 </head>
 <body>
 <header class="top"><div class="wrap">
-  <a class="brand" href="#home">Capanomics</a>
+  <a class="brand" href="/">Capanomics</a>
   <nav class="tabs">
-    <a href="#home" data-v="home">Home</a>
-    <a href="#nba" data-v="nba">NBA</a>
-    <a href="#nfl" data-v="nfl">NFL</a>
-    <a href="#trade" data-v="trade">Trade machine</a>
-    <a href="#deadline" data-v="deadline">Deadline</a>
-    <a href="#compare" data-v="compare">Compare</a>
+    <a href="/" data-v="home">Home</a>
+    <a href="/nba" data-v="nba">NBA</a>
+    <a href="/nfl" data-v="nfl">NFL</a>
+    <a href="/trade" data-v="trade">Trade machine</a>
+    <a href="/deadline" data-v="deadline">Deadline</a>
+    <a href="/compare" data-v="compare">Compare</a>
   </nav>
   <div class="jump"><select id="jump" aria-label="Jump to a team"></select></div>
 </div></header>
@@ -216,7 +216,12 @@ const nick=name=>{const w=name.split(' ');return ['Trail','Red'].includes(w[w.le
 const tip=$('#tip');
 function showTip(e,html){tip.innerHTML=html;tip.style.display='block';tip.style.left=Math.min(e.clientX+14,innerWidth-290)+'px';tip.style.top=(e.clientY+14)+'px'}
 function hideTip(){tip.style.display='none'}
-const go=h=>{location.hash=h};
+const slug=n=>n.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+const P=h=>{h=String(h).toLowerCase().replace(/^#/,'');const m=h.match(/^(nba|nfl)-([a-z]+)$/);if(m){const t=(m[1]==='nba'?NBA:NFL).find(x=>x.id.toLowerCase()===m[2]);return t?`/${m[1]}/${slug(t.name)}`:'/'}return h==='home'||!h?'/':'/'+h};
+const keyFromPath=()=>{const seg=location.pathname.toLowerCase().replace(/\.html$/,'').replace(/\/index$/,'').split('/').filter(Boolean);
+  if(seg.length===2&&(seg[0]==='nba'||seg[0]==='nfl')){const t=(seg[0]==='nba'?NBA:NFL).find(x=>slug(x.name)===seg[1]||x.id.toLowerCase()===seg[1]);return t?seg[0]+'-'+t.id.toLowerCase():'home'}
+  return seg[0]||'home'};
+const go=h=>{const u=P(h);if(u!==location.pathname)history.pushState(null,'',u);route()};
 
 /* ================= NBA logic ================= */
 function nbaTier(p){const T=NBA_T;
@@ -289,7 +294,7 @@ function viewHome(){
   const mostDead=NFL.slice().sort((a,b)=>b.dead-a.dead)[0];const worst27=NFL.slice().sort((a,b)=>a.eff27-b.eff27)[0];const best27=NFL.slice().sort((a,b)=>b.eff27-a.eff27)[0];const mostSpace=NFL.slice().sort((a,b)=>b.space-a.space)[0];
   const highestPaid=NBA.flatMap(t=>t.p.map(p=>({n:p[0],s:p[3],t})) ).sort((a,b)=>b.s-a.s)[0];
   const nflTop=NFL.flatMap(t=>t.p.map(p=>({n:p[0],s:p[1],t}))).sort((a,b)=>b.s-a.s)[0];
-  const tiles=(arr,lg)=>arr.map(t=>{const c=lg==='nba'?nbaStatusColor(t):nflStatusColor(t);const v=lg==='nba'?`${fm(t.payroll)} · ${nbaTier(t.payroll).short}`:`${fm(t.space)} now · ${fm(t.eff27)} '27`;return `<a class="tile" href="#${lg}-${t.id.toLowerCase()}" style="--c:${c}"><div class="ab">${t.id} · ${lg==='nba'?t.conf:t.conf}</div><div class="nm">${t.name}</div><div class="v">${v}</div></a>`}).join('');
+  const tiles=(arr,lg)=>arr.map(t=>{const c=lg==='nba'?nbaStatusColor(t):nflStatusColor(t);const v=lg==='nba'?`${fm(t.payroll)} · ${nbaTier(t.payroll).short}`:`${fm(t.space)} now · ${fm(t.eff27)} '27`;return `<a class="tile" href="${P(`${lg}-${t.id.toLowerCase()}`)}" style="--c:${c}"><div class="ab">${t.id} · ${lg==='nba'?t.conf:t.conf}</div><div class="nm">${t.name}</div><div class="v">${v}</div></a>`}).join('');
   return `
   <section class="hero"><div class="kicker" style="color:var(--ink2)">Updated ${new Date(DATA.asof+'T12:00:00').toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'})}</div>
   <h1>Every team's money,<br>in one place.</h1>
@@ -297,26 +302,26 @@ function viewHome(){
   <div class="grid g2">
     <div class="league" style="--lc:var(--nba)"><div class="kicker" style="color:var(--nba)">NBA · 2026-27 · soft cap</div><h3>Basketball</h3>
       <div class="rowstats"><div><div class="l">Salary cap</div><div class="n">$164.961M</div></div><div><div class="l">Taxpayers</div><div class="n">${taxTeams.length} teams</div></div><div><div class="l">Est. tax bill</div><div class="n">${fm(totalTax,0)}</div></div><div><div class="l">Payroll range</div><div class="n">${fm(lowest.payroll,0)}–${fm(highest.payroll,0)}</div></div></div>
-      <a class="btn nba" href="#nba">Explore the NBA →</a></div>
+      <a class="btn nba" href="/nba">Explore the NBA →</a></div>
     <div class="league" style="--lc:var(--nfl)"><div class="kicker" style="color:var(--nfl)">NFL · 2026 · hard cap</div><h3>Football</h3>
       <div class="rowstats"><div><div class="l">Salary cap</div><div class="n">$301.2M</div></div><div><div class="l">Most 2026 space</div><div class="n">${fm(mostSpace.space)} ${mostSpace.id}</div></div><div><div class="l">League dead money</div><div class="n">${fm(NFL.reduce((a,t)=>a+t.dead,0),0)}</div></div><div><div class="l">Over 2027 cap</div><div class="n">${NFL.filter(t=>t.space27<0).length} teams</div></div></div>
-      <a class="btn nfl" href="#nfl">Explore the NFL →</a></div>
+      <a class="btn nfl" href="/nfl">Explore the NFL →</a></div>
   </div>
 
   <h2>NBA trade deadline</h2>
   <div class="grid g2">
-    <div class="card"><div class="kicker" style="color:var(--nba)">Feb 11, 2027 · 3:00 pm ET</div><div class="count" id="count" style="margin:10px 0"></div><p>Taxpayers have until then to shed salary, and apron teams to reshape their rosters. <a href="#deadline">Open the deadline tracker →</a></p></div>
-    <div class="card"><div class="kicker" style="color:var(--nfl)">NFL deadline · passed Nov 10</div><p style="margin-top:10px">NFL trading is closed for 2026. The next checkpoint is the 2027 league year in March, when every team must be under the projected $327M cap. ${NFL.filter(t=>t.eff27<0).length} teams are projected over once a full roster is counted.</p><a href="#deadline">See the 2027 crunch →</a></div>
+    <div class="card"><div class="kicker" style="color:var(--nba)">Feb 11, 2027 · 3:00 pm ET</div><div class="count" id="count" style="margin:10px 0"></div><p>Taxpayers have until then to shed salary, and apron teams to reshape their rosters. <a href="/deadline">Open the deadline tracker →</a></p></div>
+    <div class="card"><div class="kicker" style="color:var(--nfl)">NFL deadline · passed Nov 10</div><p style="margin-top:10px">NFL trading is closed for 2026. The next checkpoint is the 2027 league year in March, when every team must be under the projected $327M cap. ${NFL.filter(t=>t.eff27<0).length} teams are projected over once a full roster is counted.</p><a href="/deadline">See the 2027 crunch →</a></div>
   </div>
 
   <h2>Storylines from the numbers</h2>
   <div class="grid g3">
-    <a class="card" href="#nba-${topTax.id.toLowerCase()}" style="text-decoration:none;color:inherit"><div class="kicker" style="color:var(--nba)">Biggest tax bill</div><h3>${topTax.name}</h3><p>${fm(nbaTax(topTax.payroll,topTax.rep).bill)} estimated${topTax.rep?' at repeater rates':''} on a ${fm(topTax.payroll)} payroll.</p></a>
-    <a class="card" href="#nba-${near2.id.toLowerCase()}" style="text-decoration:none;color:inherit"><div class="kicker" style="color:var(--nba)">Closest to the second apron</div><h3>${near2.name}</h3><p>Just ${fm(NBA_T.a2-near2.payroll,2)} below the $221.686M line.</p></a>
-    <a class="card" href="#nba-${highestPaid.t.id.toLowerCase()}" style="text-decoration:none;color:inherit"><div class="kicker" style="color:var(--nba)">Highest NBA salary</div><h3>${highestPaid.n}</h3><p>${fm(highestPaid.s,2)} in 2026-27 (${highestPaid.t.name}), ${(highestPaid.s/NBA_T.cap*100).toFixed(0)}% of the cap.</p></a>
-    <a class="card" href="#nfl-${mostDead.id.toLowerCase()}" style="text-decoration:none;color:inherit"><div class="kicker" style="color:var(--nfl)">Most dead money</div><h3>${mostDead.name}</h3><p>${fm(mostDead.dead)}, ${(mostDead.dead/mostDead.adj*100).toFixed(0)}% of their 2026 cap, is for players gone from the roster.</p></a>
-    <a class="card" href="#nfl-${worst27.id.toLowerCase()}" style="text-decoration:none;color:inherit"><div class="kicker" style="color:var(--nfl)">Worst 2027 crunch</div><h3>${worst27.name}</h3><p>Projected ${fm(worst27.eff27)} of effective 2027 space before any moves.</p></a>
-    <a class="card" href="#nfl-${best27.id.toLowerCase()}" style="text-decoration:none;color:inherit"><div class="kicker" style="color:var(--nfl)">Biggest 2027 war chest</div><h3>${best27.name}</h3><p>${fm(best27.eff27)} of effective space projected for 2027.</p></a>
+    <a class="card" href="${P(`nba-${topTax.id.toLowerCase()}`)}" style="text-decoration:none;color:inherit"><div class="kicker" style="color:var(--nba)">Biggest tax bill</div><h3>${topTax.name}</h3><p>${fm(nbaTax(topTax.payroll,topTax.rep).bill)} estimated${topTax.rep?' at repeater rates':''} on a ${fm(topTax.payroll)} payroll.</p></a>
+    <a class="card" href="${P(`nba-${near2.id.toLowerCase()}`)}" style="text-decoration:none;color:inherit"><div class="kicker" style="color:var(--nba)">Closest to the second apron</div><h3>${near2.name}</h3><p>Just ${fm(NBA_T.a2-near2.payroll,2)} below the $221.686M line.</p></a>
+    <a class="card" href="${P(`nba-${highestPaid.t.id.toLowerCase()}`)}" style="text-decoration:none;color:inherit"><div class="kicker" style="color:var(--nba)">Highest NBA salary</div><h3>${highestPaid.n}</h3><p>${fm(highestPaid.s,2)} in 2026-27 (${highestPaid.t.name}), ${(highestPaid.s/NBA_T.cap*100).toFixed(0)}% of the cap.</p></a>
+    <a class="card" href="${P(`nfl-${mostDead.id.toLowerCase()}`)}" style="text-decoration:none;color:inherit"><div class="kicker" style="color:var(--nfl)">Most dead money</div><h3>${mostDead.name}</h3><p>${fm(mostDead.dead)}, ${(mostDead.dead/mostDead.adj*100).toFixed(0)}% of their 2026 cap, is for players gone from the roster.</p></a>
+    <a class="card" href="${P(`nfl-${worst27.id.toLowerCase()}`)}" style="text-decoration:none;color:inherit"><div class="kicker" style="color:var(--nfl)">Worst 2027 crunch</div><h3>${worst27.name}</h3><p>Projected ${fm(worst27.eff27)} of effective 2027 space before any moves.</p></a>
+    <a class="card" href="${P(`nfl-${best27.id.toLowerCase()}`)}" style="text-decoration:none;color:inherit"><div class="kicker" style="color:var(--nfl)">Biggest 2027 war chest</div><h3>${best27.name}</h3><p>${fm(best27.eff27)} of effective space projected for 2027.</p></a>
   </div>
 
   <h2>NBA teams</h2><p class="note">Color shows where each payroll sits: <span style="color:${TIER_COL.space}">■</span> under cap <span style="color:${TIER_COL.over}">■</span> over cap <span style="color:${TIER_COL.tax}">■</span> taxpayer <span style="color:${TIER_COL.a1}">■</span> above 1st apron <span style="color:${TIER_COL.a2}">■</span> above 2nd apron</p>
@@ -361,7 +366,7 @@ function viewNBA(){const T=NBA_T;const nTax=NBA.filter(t=>t.payroll>T.tax).lengt
     <div class="stat"><div class="lab">≈$9.1M to ≈$35.3M</div><div class="val" style="font-size:22px">Outgoing + ≈$9.1M</div><div class="sm">Flat cushion on top of what's sent out</div></div>
     <div class="stat"><div class="lab">Above ≈$35.3M</div><div class="val" style="font-size:22px">125% + $250K</div><div class="sm">Above the 1st apron after the trade: 100%, no cushion</div></div>
   </div>
-  <p class="note">Tier thresholds rise with the cap each year; the 2026-27 values here are approximate. Try them in the <a href="#trade">trade machine</a>.</p>
+  <p class="note">Tier thresholds rise with the cap each year; the 2026-27 values here are approximate. Try them in the <a href="/trade">trade machine</a>.</p>
   <h3 style="margin-top:24px">Max contracts (by years of service)</h3>
   <div class="grid g3">
     <div class="stat"><div class="lab">0–6 years · 25% of cap</div><div class="val">${fm(T.cap*.25,2)}</div></div>
@@ -417,7 +422,7 @@ function viewNbaTeam(t){const T=NBA_T,p=t.payroll,tr=nbaTier(p),tx=nbaTax(p,t.re
   else if(t.rep&&p>T.tax-8)story+=`They're a potential repeater, so going into the tax would mean the steep repeater rates; staying under is worth a lot. `;
   story+=`Their top three salaries (${top.slice(0,3).map(r=>r[0]).join(', ')}) take up ${fm(big3)}, ${(big3/p*100).toFixed(0)}% of the payroll.`;
   const yrsHtml=NBA_YRS.map((y,i)=>`<th class="s" data-i="${i}">${y}</th>`).join('');
-  return `<div class="crumb"><a href="#home">Home</a> / <a href="#nba">NBA</a> / ${t.name}</div>
+  return `<div class="crumb"><a href="/">Home</a> / <a href="/nba">NBA</a> / ${t.name}</div>
   <div class="thead"><div><div class="kicker">${t.conf}ern Conference · ${t.div} Division</div><div class="tn">${t.name}</div></div>
     <div class="chips"><span class="chip" style="background:${TIER_COL[tr.k]}">${tr.label}</span>${hc?`<span class="chip" style="background:#dc2626">Hard-capped · ${hc===T.a1?'1st':'2nd'} apron</span>`:''}${t.rep?'<span class="chip out">Repeater rates if taxed</span>':''}</div></div>
   <div class="gauge">${gaugeNba(p,hc)}</div>
@@ -449,7 +454,7 @@ function viewNbaTeam(t){const T=NBA_T,p=t.payroll,tr=nbaTier(p),tx=nbaTax(p,t.re
       <table class="brk"><tr><th>Player</th><th>2026-27</th><th>Can bring back*</th></tr>${exp.slice(0,6).map(r=>`<tr><td>${esc(r[0])}</td><td>${fm(r[3],2)}</td><td>${p-r[3]+matchAllowed(r[3])>T.a1?fm(r[3],2)+' (100%)':fm(matchAllowed(r[3]),2)}</td></tr>`).join('')||'<tr><td colspan="3">None</td></tr>'}</table>
       <p class="note">*For that salary alone, under 2026-27 matching rules, given the team's current payroll${hc?'; the hard cap may limit it further':''}.</p></div>
     <div class="card"><h3>What the deadline means here</h3><p>${p>T.tax?`Getting under the tax line requires shedding ${fm(p-T.tax,2)} without taking salary back, which would save about ${fm(tx.bill)} in tax and restore a share of the tax payout.`:p>T.tax-6?`They sit only ${fm(T.tax-p,2)} under the tax line, so any salary taken back in a trade could tip them into the tax.`:p<T.cap?`With ${fm(T.cap-p,2)} of cap space they can absorb a contract outright, a valuable service for taxpayers looking to dump salary.`:`They have ${fm(T.tax-p)} of room below the tax line to take on salary in trades.`}</p>
-      <a class="btn nba" href="#trade" id="toTrade">Build a trade with the ${nick(t.name)} →</a></div>
+      <a class="btn nba" href="/trade" id="toTrade">Build a trade with the ${nick(t.name)} →</a></div>
   </div>`;}
 function mountNbaTeam(t){let sortI=0,dir=-1;const T=NBA_T;
   const draw=()=>{const rows=t.p.slice().sort((a,b)=>{if(sortI==='n')return dir*a[0].localeCompare(b[0]);if(sortI==='a')return dir*(a[2]-b[2]);return dir*((a[3+sortI]||0)-(b[3+sortI]||0))});
@@ -537,7 +542,7 @@ function viewNflTeam(t){const rank=NFL.slice().sort((a,b)=>b.space-a.space).find
   const injured=players.filter(r=>r[5]!=='A');const injSum=injured.reduce((a,r)=>a+r[1],0);
   const tag=t.eff27<0?['2027 crunch','#dc2626']:t.space>=20?['Flexible now','#059669']:['Tight now','#f59e0b'];
   const units=[['Offense',t.t.off,'#059669'],['Defense',t.t.def,'#10b981'],['Special teams',t.t.st,'#a7f3d0'],['Practice squad',t.t.ps,'#cbd5e1'],['Injured reserve',t.t.ir,'#dc2626']];const umax=Math.max(...units.map(u=>u[1]));
-  return `<div class="crumb"><a href="#home">Home</a> / <a href="#nfl">NFL</a> / ${t.name}</div>
+  return `<div class="crumb"><a href="/">Home</a> / <a href="/nfl">NFL</a> / ${t.name}</div>
   <div class="thead"><div><div class="kicker">${t.div}</div><div class="tn">${t.name}</div></div><div class="chips"><span class="chip" style="background:${tag[1]}">${tag[0]}</span><span class="chip out">${t.n} contracts in 2026</span></div></div>
   <div class="grid g4">
    <div class="stat"><div class="lab">2026 cap space</div><div class="val ${cls(t.space)}">${fm(t.space)}</div><div class="sm">${ord(rank)} of 32</div></div>
@@ -576,7 +581,7 @@ function viewTrade(){return `<section class="hero"><div class="kicker" style="co
   <p><b>Not modeled</b>: traded player exceptions, cash, draft picks, trade bonuses, players who recently signed and can't be traded yet, the two-month aggregation wait after acquiring a player, and the $250K/$100K cap-room cushion. Real deals need league approval.</p></div></details>`;}
 function mountTrade(){const sA=$('#ttA'),sB=$('#ttB');sA.value=state.tradeA;sB.value=state.tradeB;
   const fill=s=>{const t=nbaById[s==='A'?state.tradeA:state.tradeB],sel=s==='A'?state.selA:state.selB;
-    $('#info'+s).innerHTML=`${fm(t.payroll)} payroll · <span class="chip" style="background:${TIER_COL[nbaTier(t.payroll).k]}">${nbaTier(t.payroll).short}</span>${hardCapLine(t)?` <span class="chip" style="background:#dc2626">Hard cap ${fm(hardCapLine(t),1)}</span>`:''} · <a href="#nba-${t.id.toLowerCase()}">team page</a>`;
+    $('#info'+s).innerHTML=`${fm(t.payroll)} payroll · <span class="chip" style="background:${TIER_COL[nbaTier(t.payroll).k]}">${nbaTier(t.payroll).short}</span>${hardCapLine(t)?` <span class="chip" style="background:#dc2626">Hard cap ${fm(hardCapLine(t),1)}</span>`:''} · <a href="${P(`nba-${t.id.toLowerCase()}`)}">team page</a>`;
     $('#pl'+s).innerHTML=t.p.slice().sort((a,b)=>b[3]-a[3]).map(r=>`<label class="${sel.has(r[0])?'sel':''}"><span><input type="checkbox" data-n="${esc(r[0])}" ${sel.has(r[0])?'checked':''}> ${esc(r[0])}</span><span class="sal">${fm(r[3],2)}</span></label>`).join('');
     $('#pl'+s).querySelectorAll('input').forEach(cb=>cb.onchange=()=>{cb.checked?sel.add(cb.dataset.n):sel.delete(cb.dataset.n);cb.closest('label').classList.toggle('sel',cb.checked);evalTrade()});};
   sA.onchange=()=>{if(sA.value===state.tradeB){sA.value=state.tradeA;return}state.tradeA=sA.value;state.selA=new Set();fill('A');evalTrade()};
@@ -629,7 +634,7 @@ function viewDeadline(){const T=NBA_T;
   <div class="tablewrap"><table class="tb"><thead><tr><th>Team</th><th>Hard cap</th><th>Payroll</th><th>Room</th><th style="text-align:left">Why</th></tr></thead><tbody>${hcTeams.map(t=>`<tr class="link" data-team="#nba-${t.id.toLowerCase()}"><td>${t.name}</td><td>${t.hc.level==='a1'?'1st apron':'2nd apron'}</td><td>${fm(t.payroll)}</td><td class="${t.room<5?'neg':'pos'}">${fm(t.room,2)}</td><td style="text-align:left;white-space:normal;font-family:var(--body);font-size:12.5px;color:var(--ink2)">${esc(t.hc.why)}</td></tr>`).join('')}</tbody></table></div>
   <h2>Biggest expiring contracts</h2><p class="note">The largest 2026-27 salaries with no 2027-28 salary listed. Expiring deals are the usual currency at the deadline: they match salary now and clear books next summer.</p>
   <div class="tablewrap"><table class="tb"><thead><tr><th>Player</th><th>Team</th><th>Age</th><th>2026-27 salary</th><th>Team status</th></tr></thead><tbody>${exp.map(e=>`<tr class="link" data-team="#nba-${e.t.id.toLowerCase()}"><td>${esc(e.n)}</td><td style="font-family:var(--body)">${e.t.name}</td><td>${e.age}</td><td>${fm(e.s,2)}</td><td><span class="chip" style="background:${TIER_COL[nbaTier(e.t.payroll).k]}">${nbaTier(e.t.payroll).short}</span></td></tr>`).join('')}</tbody></table></div>
-  <h2>Exceptions available</h2><p class="note">Mid-level, bi-annual and traded player exceptions each team still holds; TPEs let a team absorb salary without matching.</p><div class="tiles">${NBA.map(t=>`<a class="tile" href="#nba-${t.id.toLowerCase()}" style="--c:${nbaStatusColor(t)}"><div class="ab">${t.id}</div><div class="nm" style="font-size:13px">${t.name}</div><div class="v" style="font-family:var(--body);font-size:12px;color:var(--ink2)">${esc(t.exc)}</div></a>`).join('')}</div>
+  <h2>Exceptions available</h2><p class="note">Mid-level, bi-annual and traded player exceptions each team still holds; TPEs let a team absorb salary without matching.</p><div class="tiles">${NBA.map(t=>`<a class="tile" href="${P(`nba-${t.id.toLowerCase()}`)}" style="--c:${nbaStatusColor(t)}"><div class="ab">${t.id}</div><div class="nm" style="font-size:13px">${t.name}</div><div class="v" style="font-family:var(--body);font-size:12px;color:var(--ink2)">${esc(t.exc)}</div></a>`).join('')}</div>
   <h2 style="color:var(--nfl)">NFL: the road to March 2027</h2><p class="lede" style="font-size:15px">The NFL trade deadline passed on November 10. The next hard date is the start of the 2027 league year in March, when every team must be under the cap. These teams have the most work to do.</p>
   <div class="tablewrap"><table class="tb"><thead><tr><th>Team</th><th>2027 space</th><th>2027 effective</th><th>Signed for 2027</th><th>2026 space (rollover)</th></tr></thead><tbody>${crunch.map(t=>`<tr class="link" data-team="#nfl-${t.id.toLowerCase()}"><td>${t.name}</td><td class="${cls(t.space27)}">${fm(t.space27)}</td><td class="${cls(t.eff27)}">${fm(t.eff27)}</td><td>${t.n27}</td><td>${fm(t.space)}</td></tr>`).join('')}</tbody></table></div>
   <p class="note">Unused 2026 space can roll over and offset part of the gap.</p>`;}
@@ -649,7 +654,7 @@ const jump=$('#jump');
 jump.innerHTML=`<option value="">Jump to a team…</option><optgroup label="NBA">${NBA.map(t=>`<option value="nba-${t.id.toLowerCase()}">${t.name}</option>`).join('')}</optgroup><optgroup label="NFL">${NFL.map(t=>`<option value="nfl-${t.id.toLowerCase()}">${t.name}</option>`).join('')}</optgroup>`;
 jump.onchange=()=>{if(jump.value)go(jump.value)};
 function route(){if(timer){clearInterval(timer);timer=null}hideTip();
-  const h=(location.hash||'').slice(1).toLowerCase();let view='home',team=null,lg=null;
+  const h=keyFromPath();let view='home',team=null,lg=null;
   const m=h.match(/^(nba|nfl)-([a-z]+)$/);
   if(m){lg=m[1];team=(lg==='nba'?nbaById:nflById)[m[2].toUpperCase()];view=team?lg+'team':'home'}
   else if(['nba','nfl','trade','deadline','compare','home'].includes(h))view=h;
@@ -660,15 +665,17 @@ function route(){if(timer){clearInterval(timer);timer=null}hideTip();
   if(view==='home'){app.innerHTML=viewHome();mountHome()}
   else if(view==='nba'){app.innerHTML=viewNBA();mountNBA()}
   else if(view==='nfl'){app.innerHTML=viewNFL();mountNFL()}
-  else if(view==='nbateam'){app.innerHTML=viewNbaTeam(team);mountNbaTeam(team);document.title=team.name+' cap sheet — Capanomics'}
-  else if(view==='nflteam'){app.innerHTML=viewNflTeam(team);document.title=team.name+' cap sheet — Capanomics'}
+  else if(view==='nbateam'){app.innerHTML=viewNbaTeam(team);mountNbaTeam(team);document.title=team.name+' Salary Cap 2026-27 — Payroll & Contracts | Capanomics'}
+  else if(view==='nflteam'){app.innerHTML=viewNflTeam(team);document.title=team.name+' Salary Cap 2026 — Cap Space & Dead Money | Capanomics'}
   else if(view==='trade'){app.innerHTML=viewTrade();mountTrade()}
   else if(view==='deadline'){app.innerHTML=viewDeadline();startCountdown()}
   else if(view==='compare'){app.innerHTML=viewCompare()}
-  if(!team)document.title='Capanomics — NBA & NFL Salary Cap Explorer';
+  if(!team)document.title=({nba:'NBA Salary Cap 2026-27: All 30 Team Payrolls — Capanomics',nfl:"NFL Salary Cap 2026: All 32 Teams' Cap Space — Capanomics",trade:'NBA Trade Machine 2026-27 — Capanomics',deadline:'NBA Trade Deadline Tracker 2027 — Capanomics',compare:'NBA vs NFL Salary Cap Compared — Capanomics'})[view]||'Capanomics — NBA & NFL Salary Cap Explorer';
   $$('#app tr[data-team]').forEach(el=>el.onclick=()=>go(el.dataset.team));
   scrollTo(0,0);}
-addEventListener('hashchange',route);route();
+if(/^#(home|nba|nfl|trade|deadline|compare|(nba|nfl)-[a-z]+)$/i.test(location.hash))history.replaceState(null,'',P(location.hash.slice(1)));
+document.addEventListener('click',e=>{const a=e.target.closest('a[href^="/"]');if(!a||e.defaultPrevented||e.button!==0||e.metaKey||e.ctrlKey||e.shiftKey||e.altKey||a.target)return;e.preventDefault();const u=a.getAttribute('href');if(u!==location.pathname)history.pushState(null,'',u);route()});
+addEventListener('popstate',route);route();
 </script>
 </body>
 </html>

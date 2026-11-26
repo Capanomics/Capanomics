@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://capanomics.com/sitemap.xml
