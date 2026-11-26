@@ -46,6 +46,16 @@ Write it to `data/nba/<TEAM>.json` unchanged.
 
 Long pages can get cut off before the 2027 table, leaving every `cap27` null. If **all** `cap27` values come back null but the existing file had some, copy each player's old `cap27` by name. If the existing file has `"no27": true`, keep that flag.
 
+**OTC pages are longer than one fetch.** Team pages run ~95–115k characters; WebFetch returns only the first ~40k as verbatim text and replaces the rest with a model-written summary, which has mixed 2027 figures into 2026. So read each NFL team page in two passes and never take the active roster from the summary:
+1. **Active roster pass** (verbatim only). Prompt:
+   > Using ONLY text you can read verbatim (not a model summary), output one line of minified JSON: {"hdr_space":2026_cap_space_in_page_header_M,"p":[[name,cap26,base26,bonus26,null,"A"],...],"t":{"off":X,"def":X,"st":X}}. p = the 25 largest cap numbers in the first (2026) Active Roster table. bonus26 = Signing + Option prorated columns. $M, 2 decimals.
+2. **Lower sections pass** (narrow prompt; these come from the summary). Prompt:
+   > 2026 season only, figures exactly as printed. Output one line of minified JSON: {"dead":[[name,amt],...],"dead_total":X,"ir":[[name,cap26,status],...],"ir_total":X,"ps_total":X}. dead = every Dead Money row plus the printed table total. ir = every Injured Reserve/PUP/NFI player with status "IR"/"PUP"/"NFI", plus the printed Injured Reserve total. $M, 2 decimals.
+
+Build the file from both: `p` = active rows (cap27 copied from the existing file by name, ignoring punctuation such as "DK"/"D.K.") + IR/PUP/NFI rows at $2.5M+ (base/bonus null); `dead` = 6 largest entries; `t` = off/def/st from pass 1, ps/ir from pass 2.
+
+**Cross-check before writing:** the pass-2 `dead_total` should match that team's dead money in the cap-space table (step 3) within $0.1M, and the IR rows should sum to `ir_total`. If a team page matches **yesterday's** dead money instead, OTC's team page hasn't caught up with its league table yet: write it anyway and note it in the report (it usually corrects on the next run). If it matches neither, or pass 1 can't be read verbatim, keep that team's existing file and list it in the report. If more than 3 changed teams fail this way, treat it as a broken source layout (section 6).
+
 ## 5. Build, check, publish
 ```
 python3 scripts/build.py      # data/ -> data.json -> public/index.html
