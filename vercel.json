@@ -4,25 +4,47 @@
   "cleanUrls": true,
   "redirects": [
     {
-      "source": "/:path*",
+      "source": "/",
       "has": [
         {
           "type": "host",
           "value": "capanomics.com"
         }
       ],
-      "destination": "https://www.capmechanics.com/:path*",
+      "destination": "https://www.capmechanics.com/",
       "statusCode": 301
     },
     {
-      "source": "/:path*",
+      "source": "/:path+",
+      "has": [
+        {
+          "type": "host",
+          "value": "capanomics.com"
+        }
+      ],
+      "destination": "https://www.capmechanics.com/:path+",
+      "statusCode": 301
+    },
+    {
+      "source": "/",
       "has": [
         {
           "type": "host",
           "value": "www.capanomics.com"
         }
       ],
-      "destination": "https://www.capmechanics.com/:path*",
+      "destination": "https://www.capmechanics.com/",
+      "statusCode": 301
+    },
+    {
+      "source": "/:path+",
+      "has": [
+        {
+          "type": "host",
+          "value": "www.capanomics.com"
+        }
+      ],
+      "destination": "https://www.capmechanics.com/:path+",
       "statusCode": 301
     }
   ]
