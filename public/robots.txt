@@ -1,3 +1,3 @@
 User-agent: *
 Allow: /
-Sitemap: https://capmechanics.com/sitemap.xml
+Sitemap: https://www.capmechanics.com/sitemap.xml

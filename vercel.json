@@ -11,7 +11,7 @@
           "value": "capanomics.com"
         }
       ],
-      "destination": "https://capmechanics.com/:path*",
+      "destination": "https://www.capmechanics.com/:path*",
       "permanent": true
     },
     {
@@ -22,7 +22,7 @@
           "value": "www.capanomics.com"
         }
       ],
-      "destination": "https://capmechanics.com/:path*",
+      "destination": "https://www.capmechanics.com/:path*",
       "permanent": true
     }
   ]

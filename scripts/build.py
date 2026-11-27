@@ -16,7 +16,7 @@ The JavaScript app takes over on load and handles navigation without page reload
 import html as H, json, os, re, subprocess, sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-SITE = "https://capmechanics.com"
+SITE = "https://www.capmechanics.com"
 PUB = os.path.join(ROOT, "public")
 
 subprocess.run([sys.executable, os.path.join(ROOT, "scripts", "build_data.py"), ROOT], check=True)
@@ -125,7 +125,7 @@ for path, title, desc, body, rel in pages:
     write(rel, page(path, title, desc, body))
 # Unknown URLs fall back to the home view.
 p404 = page("/", "Page not found — Cap Mechanics", "Page not found.", "<h1>Page not found</h1>")
-p404 = p404.replace('<link rel="canonical" href="https://capmechanics.com/">', '<meta name="robots" content="noindex">', 1)
+p404 = p404.replace('<link rel="canonical" href="https://www.capmechanics.com/">', '<meta name="robots" content="noindex">', 1)
 assert 'noindex' in p404
 write("404.html", p404)
 write("sitemap.xml", '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
