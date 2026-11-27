@@ -20,12 +20,15 @@ SITE = "https://www.capmechanics.com"
 PUB = os.path.join(ROOT, "public")
 
 subprocess.run([sys.executable, os.path.join(ROOT, "scripts", "build_data.py"), ROOT], check=True)
+sys.path.insert(0, os.path.join(ROOT, "scripts"))
+from explain import add_explainers, GLOSSARY  # noqa: E402
+
 app = open(os.path.join(ROOT, "src", "app.html")).read()
-data_txt = open(os.path.join(ROOT, "data.json")).read()
-DATA = json.loads(data_txt)
-app = app.replace("__DATA__", data_txt.replace("</", "<\\/"), 1)
 T = dict(re.findall(r"(\w+):([\d.]+)", re.search(r"const NBA_T = \{([^}]*)\}", app).group(1)))
 T = {k: float(v) for k, v in T.items()}
+DATA = add_explainers(json.load(open(os.path.join(ROOT, "data.json"))), T)
+data_txt = json.dumps(DATA, separators=(",", ":"), ensure_ascii=False)
+app = app.replace("__DATA__", data_txt.replace("</", "<\\/"), 1)
 DEFAULT_TITLE = "Cap Mechanics — NBA &amp; NFL Salary Cap Explorer"
 assert f"<title>{DEFAULT_TITLE}</title>" in app
 
@@ -72,6 +75,10 @@ def write(rel, content):
     open(f, "w").write(content)
 
 
+def summary_html(rows):
+    return "<h2>The short version</h2>" + "".join(f"<p><b>{lab}:</b> {txt}</p>" for lab, txt in rows)
+
+
 def ul(rows):
     return "<ul>" + "".join(f"<li>{r}</li>" for r in rows) + "</ul>"
 
@@ -95,6 +102,11 @@ pages.append(("/trade", "NBA Trade Machine 2026-27 — Cap Mechanics",
               "Check whether an NBA trade works under the 2026-27 CBA salary-matching and apron rules.", "<h1>NBA trade machine</h1>", "trade.html"))
 pages.append(("/deadline", "NBA Trade Deadline Tracker 2027 — Cap Mechanics",
               "Countdown and cap context for the NBA trade deadline.", "<h1>NBA trade deadline tracker</h1>", "deadline.html"))
+gl_body = "<h1>Salary cap glossary</h1><p>Plain-English definitions of NBA and NFL salary cap terms.</p>" + "".join(
+    f"<h2>{H.escape(term)}</h2><p>{H.escape(d)}</p>" for term, lg, d in GLOSSARY.values())
+pages.append(("/glossary", "Salary Cap Glossary: NBA & NFL Cap Terms Explained — Cap Mechanics",
+              "Plain-English definitions of salary cap terms: luxury tax, aprons, hard cap, mid-level exception, "
+              "Bird rights, dead money, rollover, restructures and more.", gl_body, "glossary.html"))
 pages.append(("/compare", "NBA vs NFL Salary Cap Compared — Cap Mechanics",
               "How the NBA's soft cap and luxury tax compare with the NFL's hard cap.", "<h1>NBA vs NFL salary cap</h1>", "compare.html"))
 
@@ -105,7 +117,7 @@ for t in DATA["nba"]:
             f"Contracts, luxury tax, apron and hard-cap status. Updated {asof}.")
     body = (f"<h1>{H.escape(n)} salary cap 2026-27</h1>"
             f"<p>The {H.escape(n)} have a 2026-27 payroll of {m(t['tp'])}, {nba_tier(t['tp'])} "
-            f"(cap {m(T['cap'])}, tax line {m(T['tax'])}). Data as of {asof}.</p>"
+            f"(cap {m(T['cap'])}, tax line {m(T['tax'])}). Data as of {asof}.</p>" + summary_html(t["sum"]) +
             "<h2>Biggest contracts</h2>" + ul(f"{H.escape(r[0])} — {m(r[3])}" for r in top))
     pages.append((f"/nba/{s}", f"{n} Salary Cap 2026-27 — Payroll & Contracts | Cap Mechanics", desc, body, f"nba/{s}.html"))
 
@@ -116,7 +128,7 @@ for t in DATA["nfl"]:
             f"{m(t.get('space27'))} projected 2027 space. Player cap hits and dead money. Updated {asof}.")
     body = (f"<h1>{H.escape(n)} salary cap 2026</h1>"
             f"<p>The {H.escape(n)} have {m(t['space'])} in 2026 cap space, {m(t['active'])} in active contracts "
-            f"and {m(t['dead'])} in dead money. Projected 2027 cap space: {m(t.get('space27'))}. Data as of {asof}.</p>"
+            f"and {m(t['dead'])} in dead money. Projected 2027 cap space: {m(t.get('space27'))}. Data as of {asof}.</p>" + summary_html(t["sum"]) +
             "<h2>Biggest cap hits</h2>" + ul(f"{H.escape(r[0])} — {m(r[1])}" for r in top) +
             "<h2>Largest dead money</h2>" + ul(f"{H.escape(r[0])} — {m(r[1])}" for r in sorted(t.get("deadList", []), key=lambda r: -r[1])[:5]))
     pages.append((f"/nfl/{s}", f"{n} Salary Cap 2026 — Cap Space & Dead Money | Cap Mechanics", desc, body, f"nfl/{s}.html"))

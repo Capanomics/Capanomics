@@ -167,6 +167,21 @@ footer{border-top:1px solid var(--rule);margin-top:72px;padding:32px 0 56px;font
 footer ol{padding-left:18px;columns:2;column-gap:30px}
 footer a{color:var(--ink2)}
 @media(max-width:760px){footer ol{columns:1}.rung{grid-template-columns:1fr;gap:4px}.jump{margin-left:0;width:100%}.jump select{max-width:none;width:100%}}
+.tldr{background:var(--card);border:1px solid var(--rule);border-left:4px solid var(--accent);border-radius:var(--r);padding:16px 22px 6px;margin:18px 0 14px;box-shadow:var(--sh)}
+.tldr-h{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);margin-bottom:6px}
+.tl-row{display:grid;grid-template-columns:140px 1fr;gap:14px;padding:9px 0;border-top:1px solid var(--rule2);font-size:15.5px;line-height:1.55}
+.tl-row:first-of-type{border-top:0}
+.tl-lab{font-weight:700;color:var(--ink);font-size:13.5px;padding-top:2px}
+@media(max-width:640px){.tl-row{grid-template-columns:1fr;gap:2px}.tldr{padding:14px 16px 4px}}
+.term{border-bottom:1.5px dotted currentColor;cursor:help;text-decoration:none;outline-offset:2px}
+.term:hover,.term:focus{color:var(--accent)}
+.gpop{position:absolute;z-index:60;max-width:320px;background:#0f172a;color:#f8fafc;border-radius:12px;padding:12px 14px 10px;font-size:13.5px;line-height:1.5;box-shadow:var(--sh-lg)}
+.gpop b{display:block;font-size:13px;margin-bottom:3px;color:#fff}
+.gpop a{color:#93c5fd;font-size:12.5px;display:inline-block;margin-top:6px}
+.gl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;margin-top:14px}
+.gl-grid .card h3{margin:0 0 6px;font-size:16px}
+.gl-grid .card p{margin:0;color:var(--ink2);font-size:14.5px}
+.gl-tag{font-size:11px;font-weight:700;letter-spacing:.05em;padding:2px 8px;border-radius:999px;background:var(--accent-soft);color:var(--ink2);margin-left:6px;vertical-align:2px}
 .tip{position:fixed;pointer-events:none;background:rgba(15,23,42,.94);color:#fff;font-size:12.5px;padding:9px 11px;z-index:50;display:none;max-width:280px;border-radius:10px;box-shadow:var(--sh-lg);line-height:1.5}
 </style>
 </head>
@@ -180,6 +195,7 @@ footer a{color:var(--ink2)}
     <a href="/trade" data-v="trade">Trade machine</a>
     <a href="/deadline" data-v="deadline">Deadline</a>
     <a href="/compare" data-v="compare">Compare</a>
+    <a href="/glossary" data-v="glossary">Glossary</a>
   </nav>
   <div class="jump"><select id="jump" aria-label="Jump to a team"></select></div>
 </div></header>
@@ -223,6 +239,22 @@ const P=h=>{h=String(h).toLowerCase().replace(/^#/,'');const m=h.match(/^(nba|nf
 const keyFromPath=()=>{const seg=location.pathname.toLowerCase().replace(/\.html$/,'').replace(/\/index$/,'').split('/').filter(Boolean);
   if(seg.length===2&&(seg[0]==='nba'||seg[0]==='nfl')){const t=(seg[0]==='nba'?NBA:NFL).find(x=>slug(x.name)===seg[1]||x.id.toLowerCase()===seg[1]);return t?seg[0]+'-'+t.id.toLowerCase():'home'}
   return seg[0]||'home'};
+const TM=(k,txt)=>DATA.glossary[k]?`<span class="term" data-term="${k}" tabindex="0" role="button">${txt}</span>`:txt;
+const tldr=t=>`<div class="tldr"><div class="tldr-h">The short version</div>${t.sum.map(([l,h])=>`<div class="tl-row"><div class="tl-lab">${l}</div><div>${h}</div></div>`).join('')}</div>`;
+let gpop=null;
+function closeTerm(){if(gpop){gpop.remove();gpop=null}}
+function openTerm(el){closeTerm();const g=DATA.glossary[el.dataset.term];if(!g)return;
+  gpop=document.createElement('div');gpop.className='gpop';gpop.setAttribute('role','tooltip');
+  gpop.innerHTML=`<b>${esc(g[0])}</b>${esc(g[2])}<br><a href="/glossary">All cap terms →</a>`;document.body.appendChild(gpop);
+  const r=el.getBoundingClientRect(),w=Math.min(320,innerWidth-24);gpop.style.maxWidth=w+'px';
+  let x=r.left+scrollX;x=Math.max(12+scrollX,Math.min(x,scrollX+innerWidth-w-12));
+  let y=r.bottom+scrollY+8;if(r.bottom+gpop.offsetHeight+16>innerHeight&&r.top>gpop.offsetHeight+16)y=r.top+scrollY-gpop.offsetHeight-8;
+  gpop.style.left=x+'px';gpop.style.top=y+'px';gpop.dataset.for=el.dataset.term}
+document.addEventListener('click',e=>{const el=e.target.closest('.term');
+  if(el){e.preventDefault();e.stopPropagation();if(gpop&&gpop.dataset.for===el.dataset.term)closeTerm();else openTerm(el);return}
+  if(!e.target.closest('.gpop'))closeTerm()},true);
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeTerm();const el=e.target.closest&&e.target.closest('.term');if(el&&(e.key==='Enter'||e.key===' ')){e.preventDefault();openTerm(el)}});
+addEventListener('resize',closeTerm);
 const TL=(lg,t)=>`<a class="tl" href="${P(lg+'-'+t.id)}">${t.name}</a>`;
 const go=h=>{const u=P(h);if(u!==location.pathname)history.pushState(null,'',u);route()};
 
@@ -433,15 +465,16 @@ function viewNbaTeam(t){const T=NBA_T,p=t.payroll,tr=nbaTier(p),tx=nbaTax(p,t.re
   const yrsHtml=NBA_YRS.map((y,i)=>`<th class="s" data-i="${i}">${y}</th>`).join('');
   return `<div class="crumb"><a href="/">Home</a> / <a href="/nba">NBA</a> / ${t.name}</div>
   <div class="thead"><div><div class="kicker">${t.conf}ern Conference · ${t.div} Division</div><div class="tn">${t.name}</div></div>
-    <div class="chips"><span class="chip" style="background:${TIER_COL[tr.k]}">${tr.label}</span>${hc?`<span class="chip" style="background:#dc2626">Hard-capped · ${hc===T.a1?'1st':'2nd'} apron</span>`:''}${t.rep?'<span class="chip out">Repeater rates if taxed</span>':''}</div></div>
+    <div class="chips"><span class="chip" style="background:${TIER_COL[tr.k]}">${tr.label}</span>${hc?`<span class="chip" style="background:#dc2626"><span>${TM('hard_cap','Hard-capped')}&nbsp;· ${hc===T.a1?'1st':'2nd'} apron</span></span>`:''}${t.rep?`<span class="chip out"><span>${TM('repeater','Repeater rates')}&nbsp;if taxed</span></span>`:''}</div></div>
+  ${tldr(t)}
   <div class="gauge">${gaugeNba(p,hc)}</div>
   <div class="grid g4" style="margin-top:8px">
     <div class="stat"><div class="lab">Tax payroll</div><div class="val">${fm(p)}</div><div class="sm">${ord(rank)} of 30 · ${(p/T.cap*100).toFixed(0)}% of cap</div></div>
-    <div class="stat"><div class="lab">Room to tax line</div><div class="val ${cls(T.tax-p)}">${fs(T.tax-p)}</div><div class="sm">Line: $200.428M</div></div>
-    <div class="stat"><div class="lab">${hc?'Room to hard cap':'Room to 2nd apron'}</div><div class="val ${cls((hc||T.a2)-p)}">${fs((hc||T.a2)-p)}</div><div class="sm">Line: ${fm(hc||T.a2,3)}</div></div>
-    <div class="stat"><div class="lab">Est. tax bill</div><div class="val">${tx.bill?fm(tx.bill):'$0'}</div><div class="sm">${tx.bill?'Total cost '+fm(p+tx.bill):'Not a taxpayer right now'}</div></div>
+    <div class="stat"><div class="lab">Room to ${TM('tax','tax line')}</div><div class="val ${cls(T.tax-p)}">${fs(T.tax-p)}</div><div class="sm">Line: $200.428M</div></div>
+    <div class="stat"><div class="lab">${hc?'Room to '+TM('hard_cap','hard cap'):'Room to '+TM('apron2','2nd apron')}</div><div class="val ${cls((hc||T.a2)-p)}">${fs((hc||T.a2)-p)}</div><div class="sm">Line: ${fm(hc||T.a2,3)}</div></div>
+    <div class="stat"><div class="lab">Est. ${TM('tax','tax bill')}</div><div class="val">${tx.bill?fm(tx.bill):'$0'}</div><div class="sm">${tx.bill?'Total cost '+fm(p+tx.bill):'Not a taxpayer right now'}</div></div>
   </div>
-  <p class="story" style="margin-top:18px">${story}</p>
+  <h2>The details</h2><p class="story">${story}</p>
 
   <h2>Roster &amp; contracts</h2><p class="note">Salary by season. Blank = not under contract that season (free agent, or the deal ends). Click a column header to sort.</p>
   <div class="tablewrap"><table class="tb" id="roster"><thead><tr><th class="s" data-i="n">Player</th><th>Pos</th><th class="s" data-i="a">Age</th>${yrsHtml}<th>% of cap</th></tr></thead><tbody></tbody>
@@ -553,16 +586,17 @@ function viewNflTeam(t){const rank=NFL.slice().sort((a,b)=>b.space-a.space).find
   const units=[['Offense',t.t.off,'#059669'],['Defense',t.t.def,'#10b981'],['Special teams',t.t.st,'#a7f3d0'],['Practice squad',t.t.ps,'#cbd5e1'],['Injured reserve',t.t.ir,'#dc2626']];const umax=Math.max(...units.map(u=>u[1]));
   return `<div class="crumb"><a href="/">Home</a> / <a href="/nfl">NFL</a> / ${t.name}</div>
   <div class="thead"><div><div class="kicker">${t.div}</div><div class="tn">${t.name}</div></div><div class="chips"><span class="chip" style="background:${tag[1]}">${tag[0]}</span><span class="chip out">${t.n} contracts in 2026</span></div></div>
+  ${tldr(t)}
   <div class="grid g4">
-   <div class="stat"><div class="lab">2026 cap space</div><div class="val ${cls(t.space)}">${fm(t.space)}</div><div class="sm">${ord(rank)} of 32</div></div>
-   <div class="stat"><div class="lab">Adjusted 2026 cap</div><div class="val">${fm(t.adj)}</div><div class="sm">${fs(t.adj-NFL_CAP)} vs $301.2M base</div></div>
-   <div class="stat"><div class="lab">Dead money</div><div class="val">${fm(t.dead)}</div><div class="sm">${(t.dead/t.adj*100).toFixed(1)}% of adjusted cap</div></div>
-   <div class="stat"><div class="lab">2027 effective space</div><div class="val ${cls(t.eff27)}">${fm(t.eff27)}</div><div class="sm">${ord(rank27)} of 32 · ${t.n27} signed</div></div>
+   <div class="stat"><div class="lab">2026 ${TM('cap_space','cap space')}</div><div class="val ${cls(t.space)}">${fm(t.space)}</div><div class="sm">${ord(rank)} of 32</div></div>
+   <div class="stat"><div class="lab">${TM('adjusted','Adjusted')} 2026 cap</div><div class="val">${fm(t.adj)}</div><div class="sm">${fs(t.adj-NFL_CAP)} vs $301.2M base</div></div>
+   <div class="stat"><div class="lab">${TM('dead','Dead money')}</div><div class="val">${fm(t.dead)}</div><div class="sm">${(t.dead/t.adj*100).toFixed(1)}% of adjusted cap</div></div>
+   <div class="stat"><div class="lab">2027 ${TM('eff_space','effective space')}</div><div class="val ${cls(t.eff27)}">${fm(t.eff27)}</div><div class="sm">${ord(rank27)} of 32 · ${t.n27} signed</div></div>
   </div>
   <h3 style="margin-top:20px">2026 books</h3><div class="gauge">${stackBar([['Active',t.active,'#059669'],['Dead',t.dead,'#a16207'],['Space',t.space,'#a7f3d0']],tot26,NFL_CAP,'Base cap $301.2M')}</div>
   <h3>2027 books (projected, before rollover)</h3><div class="gauge">${stackBar([['Committed',t.active27,'#059669'],['Dead',t.dead27,'#a16207'],['Space',s27,'#a7f3d0']],tot27,NFL_CAP27,'Proj. cap $327M')}</div>
   ${t.space27<0?`<p class="note">Committed 2027 money already exceeds the projected cap by ${fm(-t.space27)}.</p>`:''}
-  <div class="card" style="margin-top:12px"><h3>The read</h3>${nflRead(t).map(x=>`<p>${x}</p>`).join('')}<p>The biggest cap hit is ${esc(top[0])} at ${fm(top[1],2)} (${(top[1]/NFL_CAP*100).toFixed(1)}% of the cap)${top[5]!=='A'?', and he is currently on '+top[5]:''}.${injSum>0?` Players on IR/PUP with $2.5M+ cap hits account for ${fm(injSum)}.`:''}</p></div>
+  <div class="card" style="margin-top:12px"><h3>The details</h3>${nflRead(t).map(x=>`<p>${x}</p>`).join('')}<p>The biggest cap hit is ${esc(top[0])} at ${fm(top[1],2)} (${(top[1]/NFL_CAP*100).toFixed(1)}% of the cap)${top[5]!=='A'?', and he is currently on '+top[5]:''}.${injSum>0?` Players on IR/PUP with $2.5M+ cap hits account for ${fm(injSum)}.`:''}</p></div>
 
   <h2>Biggest cap hits</h2><p class="note">The 25 largest 2026 cap numbers on the active roster, plus injured players with $2.5M+ cap hits. Prorated bonus = signing and option bonus money spread over the deal.</p>
   <div class="tablewrap"><table class="tb" id="nflRoster"><thead><tr><th>Player</th><th>Status</th><th>2026 cap hit</th><th>Base salary</th><th>Prorated bonus</th><th>% of cap</th><th>2027 cap hit</th></tr></thead><tbody>
@@ -649,6 +683,10 @@ function viewDeadline(){const T=NBA_T;
   <p class="note">Unused 2026 space can roll over and offset part of the gap.</p>`;}
 
 /* ================= COMPARE ================= */
+function viewGlossary(){const E=Object.entries(DATA.glossary);
+  const grp=lg=>E.filter(([k,g])=>g[1]===lg||(lg==='NBA'&&g[1]==='Both')).map(([k,g])=>`<div class="card" id="${k}"><h3>${esc(g[0])}</h3><p>${esc(g[2])}</p></div>`).join('');
+  return `<section class="hero"><div class="kicker">Glossary</div><h1>Salary cap terms, in plain English</h1><p class="lede">Every cap term used on Cap Mechanics, explained without the jargon. On team pages, tap any <span class="term" data-term="cap_hit" tabindex="0" role="button">dotted term</span> to see its definition.</p></section>
+  <h2>NBA</h2><div class="gl-grid">${grp('NBA')}</div><h2>NFL</h2><div class="gl-grid">${grp('NFL')}</div>`}
 function viewCompare(){const rows=[['Cap type','<b>Soft cap.</b> Teams may exceed it using exceptions and Bird rights; the aprons act as practical ceilings.','<b>Hard cap.</b> No team may exceed its adjusted cap at any point in the league year.'],['Current number','$164.961M cap · $200.428M tax · $209.015M / $221.686M aprons (2026-27)','$301.2M base cap (2026); $327M projected for 2027'],['Roster size','15 standard + up to 3 two-way contracts','53-man roster + practice squad; top-51 rule in offseason'],['Cap per roster spot','≈ $11.0M per standard spot','≈ $5.7M per 53-man spot'],['Penalty for spending','Luxury tax by bracket; repeater rates; apron restrictions and frozen draft picks','None allowed; the cost is pushed into future years via proration'],['Guarantees','Contracts are generally fully guaranteed','Partial guarantees are the norm; cut players leave dead money'],['Keeping your stars','Bird rights let a team exceed the cap to re-sign its own players','Franchise / transition tags buy one year at a set price'],['Moving money in time','Little: salary counts the season it\'s paid; stretch provision spreads waived salary','Lots: bonus proration, restructures, void years, rollover, post-June 1 cuts'],['Floor','Minimum team salary $148.465M','90% cash-spending minimum over multi-year periods'],['Trade deadline','Feb 11, 2027','Nov 10, 2026 (passed)']];
   return `<section class="hero"><div class="kicker" style="color:var(--ink2)">Side by side</div><h1>Two leagues,<br>two philosophies.</h1><p class="lede">The NBA lets teams spend past the cap and punishes them for it. The NFL forbids it, and lets teams borrow from the future instead.</p></section>
   <div class="grid g2" style="margin-bottom:18px"><div class="chart">${barsSvg(NBA_HIST.map(([a,b])=>[a,b,'#ea580c']),{h:200,min:300})}<p class="note" style="margin:4px 8px">NBA salary cap ($M)</p></div><div class="chart">${barsSvg(NFL_HIST.filter(d=>d[0]>=2022).map(([a,b])=>[String(a)+(a===2027?'*':''),b,'#059669']),{h:200,min:300})}<p class="note" style="margin:4px 8px">NFL salary cap ($M), 2027 projected</p></div></div>
@@ -662,11 +700,11 @@ $('#foot').innerHTML=`<p><b>About the data.</b> NBA payrolls and rosters come fr
 const jump=$('#jump');
 jump.innerHTML=`<option value="">Jump to a team…</option><optgroup label="NBA">${NBA.map(t=>`<option value="nba-${t.id.toLowerCase()}">${t.name}</option>`).join('')}</optgroup><optgroup label="NFL">${NFL.map(t=>`<option value="nfl-${t.id.toLowerCase()}">${t.name}</option>`).join('')}</optgroup>`;
 jump.onchange=()=>{if(jump.value)go(jump.value)};
-function route(){if(timer){clearInterval(timer);timer=null}hideTip();
+function route(){if(timer){clearInterval(timer);timer=null}hideTip();closeTerm();
   const h=keyFromPath();let view='home',team=null,lg=null;
   const m=h.match(/^(nba|nfl)-([a-z]+)$/);
   if(m){lg=m[1];team=(lg==='nba'?nbaById:nflById)[m[2].toUpperCase()];view=team?lg+'team':'home'}
-  else if(['nba','nfl','trade','deadline','compare','home'].includes(h))view=h;
+  else if(['nba','nfl','trade','deadline','compare','glossary','home'].includes(h))view=h;
   document.body.className=view.startsWith('nba')||view==='trade'?'nba':view.startsWith('nfl')?'nfl':'';
   const navKey=view==='nbateam'?'nba':view==='nflteam'?'nfl':view;$$('nav.tabs a').forEach(a=>a.classList.toggle('on',a.dataset.v===navKey));
   jump.value=team?h:'';
@@ -679,10 +717,11 @@ function route(){if(timer){clearInterval(timer);timer=null}hideTip();
   else if(view==='trade'){app.innerHTML=viewTrade();mountTrade()}
   else if(view==='deadline'){app.innerHTML=viewDeadline();startCountdown()}
   else if(view==='compare'){app.innerHTML=viewCompare()}
-  if(!team)document.title=({nba:'NBA Salary Cap 2026-27: All 30 Team Payrolls — Cap Mechanics',nfl:"NFL Salary Cap 2026: All 32 Teams' Cap Space — Cap Mechanics",trade:'NBA Trade Machine 2026-27 — Cap Mechanics',deadline:'NBA Trade Deadline Tracker 2027 — Cap Mechanics',compare:'NBA vs NFL Salary Cap Compared — Cap Mechanics'})[view]||'Cap Mechanics — NBA & NFL Salary Cap Explorer';
+  else if(view==='glossary'){app.innerHTML=viewGlossary()}
+  if(!team)document.title=({nba:'NBA Salary Cap 2026-27: All 30 Team Payrolls — Cap Mechanics',nfl:"NFL Salary Cap 2026: All 32 Teams' Cap Space — Cap Mechanics",trade:'NBA Trade Machine 2026-27 — Cap Mechanics',deadline:'NBA Trade Deadline Tracker 2027 — Cap Mechanics',compare:'NBA vs NFL Salary Cap Compared — Cap Mechanics',glossary:'Salary Cap Glossary: NBA & NFL Cap Terms Explained — Cap Mechanics'})[view]||'Cap Mechanics — NBA & NFL Salary Cap Explorer';
   $$('#app tr[data-team]').forEach(el=>el.onclick=e=>{if(!e.target.closest('a'))go(el.dataset.team)});
   scrollTo(0,0);}
-if(/^#(home|nba|nfl|trade|deadline|compare|(nba|nfl)-[a-z]+)$/i.test(location.hash))history.replaceState(null,'',P(location.hash.slice(1)));
+if(/^#(home|nba|nfl|trade|deadline|compare|glossary|(nba|nfl)-[a-z]+)$/i.test(location.hash))history.replaceState(null,'',P(location.hash.slice(1)));
 document.addEventListener('click',e=>{const a=e.target.closest('a[href^="/"]');if(!a||e.defaultPrevented||e.button!==0||e.metaKey||e.ctrlKey||e.shiftKey||e.altKey||a.target)return;e.preventDefault();const u=a.getAttribute('href');if(u!==location.pathname)history.pushState(null,'',u);route()});
 addEventListener('popstate',route);route();
 </script>
