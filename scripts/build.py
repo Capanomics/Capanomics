@@ -118,13 +118,16 @@ for t in DATA["nfl"]:
             f"<p>The {H.escape(n)} have {m(t['space'])} in 2026 cap space, {m(t['active'])} in active contracts "
             f"and {m(t['dead'])} in dead money. Projected 2027 cap space: {m(t.get('space27'))}. Data as of {asof}.</p>"
             "<h2>Biggest cap hits</h2>" + ul(f"{H.escape(r[0])} — {m(r[1])}" for r in top) +
-            "<h2>Largest dead money</h2>" + ul(f"{H.escape(r[0])} — {m(r[1])}" for r in t.get("deadList", [])[:5]))
+            "<h2>Largest dead money</h2>" + ul(f"{H.escape(r[0])} — {m(r[1])}" for r in sorted(t.get("deadList", []), key=lambda r: -r[1])[:5]))
     pages.append((f"/nfl/{s}", f"{n} Salary Cap 2026 — Cap Space & Dead Money | Capanomics", desc, body, f"nfl/{s}.html"))
 
 for path, title, desc, body, rel in pages:
     write(rel, page(path, title, desc, body))
 # Unknown URLs fall back to the home view.
-write("404.html", page("/", "Page not found — Capanomics", "Page not found.", "<h1>Page not found</h1>"))
+p404 = page("/", "Page not found — Capanomics", "Page not found.", "<h1>Page not found</h1>")
+p404 = p404.replace('<link rel="canonical" href="https://capanomics.com/">', '<meta name="robots" content="noindex">', 1)
+assert 'noindex' in p404
+write("404.html", p404)
 write("sitemap.xml", '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
       + "".join(f"  <url><loc>{SITE}{'/' if p[0] == '/' else p[0]}</loc><lastmod>{asof}</lastmod></url>\n" for p in pages)
       + "</urlset>\n")

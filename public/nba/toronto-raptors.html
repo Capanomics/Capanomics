@@ -108,6 +108,7 @@ table.tb td{padding:10px 14px;border-bottom:1px solid var(--rule2);text-align:ri
 table.tb td:first-child{font-weight:600}
 table.tb tbody tr:last-child td{border-bottom:none}
 table.tb tr.link{cursor:pointer;transition:background .1s}
+a.tl{color:inherit;text-decoration:none}a.tl:hover{text-decoration:underline}
 table.tb tbody tr.link:hover{background:var(--accent-soft)}
 table.tb tr.tot td{border-top:1px solid var(--rule);font-weight:700;background:#fafbfc}
 table.tb th.sorted{color:var(--ink)}
@@ -120,6 +121,7 @@ table.tb td.dim{color:var(--ink3)}
 .thead .chip{font-size:12.5px;padding:6px 12px}
 .gauge{background:var(--card);border:1px solid var(--rule);border-radius:var(--r);padding:14px 18px;box-shadow:var(--sh);margin:6px 0 14px}
 .gauge svg{width:100%;height:auto;display:block}
+details.more summary{cursor:pointer;color:var(--accent);font-size:13px;font-weight:600;margin:6px 0}
 .can{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin-top:12px}
 .can li{margin:4px 0}
 .yes::marker{content:'✓  ';color:var(--good)}
@@ -228,6 +230,7 @@ const P=h=>{h=String(h).toLowerCase().replace(/^#/,'');const m=h.match(/^(nba|nf
 const keyFromPath=()=>{const seg=location.pathname.toLowerCase().replace(/\.html$/,'').replace(/\/index$/,'').split('/').filter(Boolean);
   if(seg.length===2&&(seg[0]==='nba'||seg[0]==='nfl')){const t=(seg[0]==='nba'?NBA:NFL).find(x=>slug(x.name)===seg[1]||x.id.toLowerCase()===seg[1]);return t?seg[0]+'-'+t.id.toLowerCase():'home'}
   return seg[0]||'home'};
+const TL=(lg,t)=>`<a class="tl" href="${P(lg+'-'+t.id)}">${t.name}</a>`;
 const go=h=>{const u=P(h);if(u!==location.pathname)history.pushState(null,'',u);route()};
 
 /* ================= NBA logic ================= */
@@ -266,13 +269,19 @@ function nflRead(t){const s=[];const deadPct=t.dead/t.adj*100;
   return s;}
 
 /* ================= shared charts ================= */
-function gaugeNba(p,hc){const T=NBA_T,W=1000,H=86,lo=140,hi=235,x=v=>20+(Math.min(Math.max(v,lo),hi)-lo)/(hi-lo)*(W-40);
+function gaugeNba(p,hc){const T=NBA_T,sm=innerWidth<700,W=sm?440:1000,H=sm?100:86,FS=sm?15:12,lo=140,hi=235,x=v=>20+(Math.min(Math.max(v,lo),hi)-lo)/(hi-lo)*(W-40);
   const segs=[[lo,T.cap,TIER_COL.space],[T.cap,T.tax,TIER_COL.over],[T.tax,T.a1,TIER_COL.tax],[T.a1,T.a2,TIER_COL.a1],[T.a2,hi,TIER_COL.a2]];
-  let s=`<svg viewBox="0 0 ${W} ${H}">`;segs.forEach(([a,b,c])=>s+=`<rect x="${x(a)}" y="30" width="${x(b)-x(a)}" height="16" rx="3" fill="${c}" opacity=".22"/>`);
+  let s=`<svg viewBox="0 -8 ${W} ${H+8}">`;segs.forEach(([a,b,c])=>s+=`<rect x="${x(a)}" y="30" width="${x(b)-x(a)}" height="16" rx="3" fill="${c}" opacity=".22"/>`);
   s+=`<rect x="${x(lo)}" y="30" width="${x(p)-x(lo)}" height="16" rx="3" fill="#0f172a"/>`;
-  [['Cap',T.cap],['Tax',T.tax],['A1',T.a1],['A2',T.a2]].forEach(([n,v])=>s+=`<line x1="${x(v)}" x2="${x(v)}" y1="24" y2="52" stroke="#0f172a"/><text x="${x(v)}" y="68" text-anchor="middle" font-size="12" font-family="Inter,sans-serif" fill="#64748b">${n} ${v.toFixed(1)}</text>`);
-  if(hc)s+=`<line x1="${x(hc)}" x2="${x(hc)}" y1="22" y2="54" stroke="#dc2626" stroke-width="4"/><text x="${x(hc)}" y="84" text-anchor="middle" font-size="11.5" font-weight="700" fill="#dc2626" font-family="Inter,sans-serif">HARD CAP</text>`;
-  s+=`<polygon points="${x(p)-7},10 ${x(p)+7},10 ${x(p)},24" fill="var(--accent)"/><text x="${x(p)}" y="8" text-anchor="middle" font-size="12.5" font-weight="700" font-family="Inter,sans-serif">$${p.toFixed(1)}M</text></svg>`;return s;}
+  [['Cap',T.cap],['Tax',T.tax],['A1',T.a1],['A2',T.a2]].forEach(([n,v])=>s+=`<line x1="${x(v)}" x2="${x(v)}" y1="24" y2="52" stroke="#0f172a"/><text x="${x(v)}" y="68" text-anchor="middle" font-size="${FS}" font-family="Inter,sans-serif" fill="#64748b">${sm?n:n+' '+v.toFixed(1)}</text>`);
+  if(hc)s+=`<line x1="${x(hc)}" x2="${x(hc)}" y1="22" y2="54" stroke="#dc2626" stroke-width="4"/><text x="${x(hc)}" y="${sm?96:84}" text-anchor="middle" font-size="${sm?14:11.5}" font-weight="700" fill="#dc2626" font-family="Inter,sans-serif">HARD CAP</text>`;
+  s+=`<polygon points="${x(p)-7},10 ${x(p)+7},10 ${x(p)},24" fill="var(--accent)"/><text x="${x(p)}" y="8" text-anchor="middle" font-size="${sm?16:12.5}" font-weight="700" font-family="Inter,sans-serif">$${p.toFixed(1)}M</text></svg>`;return s;}
+function deadTable(t){const L=t.deadList.slice().sort((a,b)=>b[1]-a[1]),row=d=>`<tr><td>${esc(d[0])}</td><td>${fm(d[1],2)}</td></tr>`;
+  const sum=L.reduce((a,d)=>a+d[1],0),rest=t.dead-sum;
+  let h=`<table class="brk">${L.slice(0,8).map(row).join('')}</table>`;
+  if(L.length>8)h+=`<details class="more"><summary>Show all ${L.length} charges</summary><table class="brk">${L.slice(8).map(row).join('')}</table></details>`;
+  if(rest>0.1)h+=`<table class="brk"><tr><td class="dim">Not itemized yet</td><td class="dim">${fm(rest,2)}</td></tr></table>`;
+  return h}
 function stackBar(parts,total,cap,capLabel){const W=1000,H=78,x=v=>20+v/total*(W-40);let s=`<svg viewBox="0 0 ${W} ${H}">`,acc=0;
   parts.forEach(([l,v,c])=>{if(v<=0)return;s+=`<rect x="${x(acc)}" y="22" width="${x(acc+v)-x(acc)}" height="22" rx="3" fill="${c}"/>`;if(x(acc+v)-x(acc)>90)s+=`<text x="${(x(acc)+x(acc+v))/2}" y="37" text-anchor="middle" font-size="12" fill="#fff" font-family="Inter,sans-serif" font-weight="600">${l} ${fm(v)}</text>`;acc+=v});
   s+=`<line x1="${x(cap)}" x2="${x(cap)}" y1="12" y2="54" stroke="#0f172a" stroke-width="2"/><text x="${x(cap)}" y="70" text-anchor="${x(cap)>W-140?'end':'middle'}" font-size="12" font-family="Inter,sans-serif">${capLabel}</text></svg>`;return s;}
@@ -288,7 +297,7 @@ let state={nbaSort:'payroll',nbaDir:-1,nflSort:'space',nflDir:-1,nbaConf:'All',n
 let timer=null;
 function subnav(items){return `<div class="sub">${items.map(([id,l])=>`<a data-jump="${id}">${l}</a>`).join('')}</div>`}
 function bindJumps(){$$('[data-jump]').forEach(a=>a.onclick=()=>{const el=document.getElementById(a.dataset.jump);if(el)el.scrollIntoView({behavior:'smooth'})})}
-function bindRows(){$$('[data-team]').forEach(el=>el.addEventListener('click',()=>go(el.dataset.team)))}
+function bindRows(){$$('[data-team]').forEach(el=>el.addEventListener('click',e=>{if(!e.target.closest('a'))go(el.dataset.team)}))}
 
 /* ================= HOME ================= */
 function nbaStatusColor(t){return TIER_COL[nbaTier(t.payroll).k]}
@@ -405,9 +414,9 @@ function drawNbaChart(){const T=NBA_T;const teams=NBA.filter(t=>state.nbaConf===
 function drawNbaTable(){const T=NBA_T;const cols=[['name','Team'],['payroll','Payroll'],['cap','vs Cap'],['tax','vs Tax'],['a1','vs Apron 1'],['a2','vs Apron 2'],['bill','Est. tax'],['tier','Status']];
   const rows=NBA.filter(t=>state.nbaConf==='All'||t.conf===state.nbaConf).map(t=>({...t,cap:T.cap-t.payroll,tax:T.tax-t.payroll,a1:T.a1-t.payroll,a2:T.a2-t.payroll,bill:nbaTax(t.payroll,t.rep).bill,tier:nbaTier(t.payroll).short}));
   const k=state.nbaSort,d=state.nbaDir;rows.sort((a,b)=>typeof a[k]==='string'?d*a[k].localeCompare(b[k]):d*(a[k]-b[k]));
-  $('#nbaTable').innerHTML=`<thead><tr>${cols.map(([c,l])=>`<th class="s ${k===c?'sorted':''}" data-k="${c}">${l}${k===c?(d>0?' ▲':' ▼'):''}</th>`).join('')}</tr></thead><tbody>${rows.map(r=>`<tr class="link" data-team="#nba-${r.id.toLowerCase()}"><td>${r.name}</td><td>${fm(r.payroll)}</td><td class="${cls(r.cap)}">${fs(r.cap)}</td><td class="${cls(r.tax)}">${fs(r.tax)}</td><td class="${cls(r.a1)}">${fs(r.a1)}</td><td class="${cls(r.a2)}">${fs(r.a2)}</td><td>${r.bill?fm(r.bill)+(r.rep?'<sup>R</sup>':''):'—'}</td><td><span class="chip" style="background:${TIER_COL[nbaTier(r.payroll).k]}">${r.tier}</span></td></tr>`).join('')}</tbody>`;
+  $('#nbaTable').innerHTML=`<thead><tr>${cols.map(([c,l])=>`<th class="s ${k===c?'sorted':''}" data-k="${c}">${l}${k===c?(d>0?' ▲':' ▼'):''}</th>`).join('')}</tr></thead><tbody>${rows.map(r=>`<tr class="link" data-team="#nba-${r.id.toLowerCase()}"><td>${TL('nba',r)}</td><td>${fm(r.payroll)}</td><td class="${cls(r.cap)}">${fs(r.cap)}</td><td class="${cls(r.tax)}">${fs(r.tax)}</td><td class="${cls(r.a1)}">${fs(r.a1)}</td><td class="${cls(r.a2)}">${fs(r.a2)}</td><td>${r.bill?fm(r.bill)+(r.rep?'<sup>R</sup>':''):'—'}</td><td><span class="chip" style="background:${TIER_COL[nbaTier(r.payroll).k]}">${r.tier}</span></td></tr>`).join('')}</tbody>`;
   $('#nbaTable').querySelectorAll('th').forEach(th=>th.onclick=()=>{const c=th.dataset.k;if(state.nbaSort===c)state.nbaDir*=-1;else{state.nbaSort=c;state.nbaDir=c==='name'||c==='tier'?1:-1}drawNbaTable()});
-  $('#nbaTable').querySelectorAll('tbody tr').forEach(tr=>tr.onclick=()=>go(tr.dataset.team));}
+  $('#nbaTable').querySelectorAll('tbody tr').forEach(tr=>tr.onclick=e=>{if(!e.target.closest('a'))go(tr.dataset.team)});}
 function taxCalc(){const p=+$('#taxP').value,rep=$('#taxRep').checked;const r=nbaTax(p,rep),tr=nbaTier(p);
   $('#taxPv').textContent='$'+p.toFixed(1)+'M';$('#taxOut').innerHTML=r.bill?fm(r.bill)+' <span style="font-size:15px;font-weight:600">tax</span>':'No tax';
   $('#taxSub').innerHTML=`<span class="chip" style="background:${TIER_COL[tr.k]}">${tr.label}</span> &nbsp;Total cost ${fm(p+r.bill)} · ${p>NBA_T.tax?fm(p-NBA_T.tax)+' over the line':fm(NBA_T.tax-p)+' under the line'}`;
@@ -527,9 +536,9 @@ function drawNflChart(){const v=state.nflView;const key=v==='2026'?'space':v==='
 function drawNflTable(){const cols=[['name','Team'],['space','2026 space'],['adj','Adjusted cap'],['active','Active spend'],['dead','Dead money'],['deadPct','Dead %'],['n','Signed'],['space27','2027 space'],['eff27','2027 eff.']];
   const rows=NFL.filter(t=>state.nflConf==='All'||t.conf===state.nflConf).map(t=>({...t,deadPct:t.dead/t.adj*100}));const k=state.nflSort,d=state.nflDir;
   rows.sort((a,b)=>typeof a[k]==='string'?d*a[k].localeCompare(b[k]):d*(a[k]-b[k]));
-  $('#nflTable').innerHTML=`<thead><tr>${cols.map(([c,l])=>`<th class="s ${k===c?'sorted':''}" data-k="${c}">${l}${k===c?(d>0?' ▲':' ▼'):''}</th>`).join('')}</tr></thead><tbody>${rows.map(r=>`<tr class="link" data-team="#nfl-${r.id.toLowerCase()}"><td>${r.name}</td><td class="${cls(r.space)}">${fm(r.space)}</td><td>${fm(r.adj)}</td><td>${fm(r.active)}</td><td>${fm(r.dead)}</td><td>${r.deadPct.toFixed(1)}%</td><td>${r.n}</td><td class="${cls(r.space27)}">${fm(r.space27)}</td><td class="${cls(r.eff27)}">${fm(r.eff27)}</td></tr>`).join('')}</tbody>`;
+  $('#nflTable').innerHTML=`<thead><tr>${cols.map(([c,l])=>`<th class="s ${k===c?'sorted':''}" data-k="${c}">${l}${k===c?(d>0?' ▲':' ▼'):''}</th>`).join('')}</tr></thead><tbody>${rows.map(r=>`<tr class="link" data-team="#nfl-${r.id.toLowerCase()}"><td>${TL('nfl',r)}</td><td class="${cls(r.space)}">${fm(r.space)}</td><td>${fm(r.adj)}</td><td>${fm(r.active)}</td><td>${fm(r.dead)}</td><td>${r.deadPct.toFixed(1)}%</td><td>${r.n}</td><td class="${cls(r.space27)}">${fm(r.space27)}</td><td class="${cls(r.eff27)}">${fm(r.eff27)}</td></tr>`).join('')}</tbody>`;
   $('#nflTable').querySelectorAll('th').forEach(th=>th.onclick=()=>{const c=th.dataset.k;if(state.nflSort===c)state.nflDir*=-1;else{state.nflSort=c;state.nflDir=c==='name'?1:-1}drawNflTable()});
-  $('#nflTable').querySelectorAll('tbody tr').forEach(tr=>tr.onclick=()=>go(tr.dataset.team));}
+  $('#nflTable').querySelectorAll('tbody tr').forEach(tr=>tr.onclick=e=>{if(!e.target.closest('a'))go(tr.dataset.team)});}
 function rsCalc(){const B=+$('#rsB').value;const K=Math.min(+$('#rsK').value,B);const Y=+$('#rsY').value;const conv=B-K,per=conv/Y,saved=conv-per;const t=nflById[$('#rsTeam').value];
   $('#rsBv').textContent=fm(B);$('#rsKv').textContent=fm(K);$('#rsYv').textContent=Y+' yrs';
   $('#rsOut').innerHTML=fs(saved)+' <span style="font-size:15px;font-weight:600">cap room this year</span>';
@@ -570,7 +579,7 @@ function viewNflTeam(t){const rank=NFL.slice().sort((a,b)=>b.space-a.space).find
 
   <div class="grid g2" style="margin-top:20px">
    <div class="card"><h3>Where the money goes (2026)</h3>${units.map(u=>`<div style="margin:8px 0"><div style="display:flex;justify-content:space-between;font-size:13.5px"><span>${u[0]}</span><span class="mono">${fm(u[1])}</span></div><div class="bar" style="--c:${u[2]}"><i style="width:${u[1]/umax*100}%"></i></div></div>`).join('')}</div>
-   <div class="card"><h3>Largest dead money charges</h3><table class="brk">${t.deadList.map(d=>`<tr><td>${esc(d[0])}</td><td>${fm(d[1],2)}</td></tr>`).join('')}<tr><td><b>Total dead money</b></td><td><b>${fm(t.dead,2)}</b></td></tr></table><p class="note">Charges for players released or traded, mostly accelerated signing bonus.</p></div>
+   <div class="card"><h3>Dead money charges</h3>${deadTable(t)}<table class="brk"><tr><td><b>Total dead money</b></td><td><b>${fm(t.dead,2)}</b></td></tr></table><p class="note">Charges for players released or traded, mostly accelerated signing bonus.</p></div>
   </div>
   ${t.no27?'':`<h2>2027 pressure points</h2><div class="grid g2">
    <div class="card"><h3>Biggest cap-hit jumps into 2027</h3><p class="note">Deals that get more expensive next year; prime restructure or extension candidates.</p><table class="brk"><tr><th>Player</th><th>2026</th><th>2027</th><th>Change</th></tr>${spikes.map(r=>`<tr><td>${esc(r[0])}</td><td>${fm(r[1],1)}</td><td>${fm(r[4],1)}</td><td class="neg">+${fm(r[4]-r[1],1).slice(1)}</td></tr>`).join('')||'<tr><td colspan="4">No big jumps among top cap hits.</td></tr>'}</table></div>
@@ -636,14 +645,14 @@ function viewDeadline(){const T=NBA_T;
   </div>
   <h2>Tax line watch</h2><p class="note">Teams within $8M below the tax line up to just past the 2nd apron. Bars show distance from the $200.428M tax line. The estimated tax is what a team saves by getting under the line; the last column is how much salary it would have to shed.</p>
   <div class="tablewrap"><table class="tb"><thead><tr><th>Team</th><th>Payroll</th><th>vs tax line</th><th style="text-align:left;width:32%">Position</th><th>Est. tax</th><th>Cut needed to duck tax</th></tr></thead><tbody>
-  ${watch.map(t=>{const d=t.payroll-T.tax,bill=nbaTax(t.payroll,t.rep).bill;const w=Math.min(Math.abs(d)/25*50,50);return `<tr class="link" data-team="#nba-${t.id.toLowerCase()}"><td>${t.name}</td><td>${fm(t.payroll)}</td><td class="${d>0?'neg':'pos'}">${fs(d,Math.abs(d)<1?2:1)}</td><td style="text-align:left"><div style="position:relative;height:12px;background:#eef1f5"><div style="position:absolute;left:50%;top:-3px;bottom:-3px;width:2px;background:#0f172a"></div><div style="position:absolute;top:0;bottom:0;${d>0?`left:50%;width:${w}%;background:#ea580c`:`right:50%;width:${w}%;background:#2563eb`}"></div></div></td><td>${bill?fm(bill)+(t.rep?'<sup>R</sup>':''):'—'}</td><td>${d>0?fm(d,2):'—'}</td></tr>`}).join('')}</tbody></table></div>
+  ${watch.map(t=>{const d=t.payroll-T.tax,bill=nbaTax(t.payroll,t.rep).bill;const w=Math.min(Math.abs(d)/25*50,50);return `<tr class="link" data-team="#nba-${t.id.toLowerCase()}"><td>${TL('nba',t)}</td><td>${fm(t.payroll)}</td><td class="${d>0?'neg':'pos'}">${fs(d,Math.abs(d)<1?2:1)}</td><td style="text-align:left"><div style="position:relative;height:12px;background:#eef1f5"><div style="position:absolute;left:50%;top:-3px;bottom:-3px;width:2px;background:#0f172a"></div><div style="position:absolute;top:0;bottom:0;${d>0?`left:50%;width:${w}%;background:#ea580c`:`right:50%;width:${w}%;background:#2563eb`}"></div></div></td><td>${bill?fm(bill)+(t.rep?'<sup>R</sup>':''):'—'}</td><td>${d>0?fm(d,2):'—'}</td></tr>`}).join('')}</tbody></table></div>
   <h2>Hard-cap squeeze</h2><p class="note">Teams that have triggered a hard cap this season and how much room they have under it. They can't exceed it for any reason this season.</p>
-  <div class="tablewrap"><table class="tb"><thead><tr><th>Team</th><th>Hard cap</th><th>Payroll</th><th>Room</th><th style="text-align:left">Why</th></tr></thead><tbody>${hcTeams.map(t=>`<tr class="link" data-team="#nba-${t.id.toLowerCase()}"><td>${t.name}</td><td>${t.hc.level==='a1'?'1st apron':'2nd apron'}</td><td>${fm(t.payroll)}</td><td class="${t.room<5?'neg':'pos'}">${fm(t.room,2)}</td><td style="text-align:left;white-space:normal;font-family:var(--body);font-size:12.5px;color:var(--ink2)">${esc(t.hc.why)}</td></tr>`).join('')}</tbody></table></div>
+  <div class="tablewrap"><table class="tb"><thead><tr><th>Team</th><th>Hard cap</th><th>Payroll</th><th>Room</th><th style="text-align:left">Why</th></tr></thead><tbody>${hcTeams.map(t=>`<tr class="link" data-team="#nba-${t.id.toLowerCase()}"><td>${TL('nba',t)}</td><td>${t.hc.level==='a1'?'1st apron':'2nd apron'}</td><td>${fm(t.payroll)}</td><td class="${t.room<5?'neg':'pos'}">${fm(t.room,2)}</td><td style="text-align:left;white-space:normal;font-family:var(--body);font-size:12.5px;color:var(--ink2)">${esc(t.hc.why)}</td></tr>`).join('')}</tbody></table></div>
   <h2>Biggest expiring contracts</h2><p class="note">The largest 2026-27 salaries with no 2027-28 salary listed. Expiring deals are the usual currency at the deadline: they match salary now and clear books next summer.</p>
-  <div class="tablewrap"><table class="tb"><thead><tr><th>Player</th><th>Team</th><th>Age</th><th>2026-27 salary</th><th>Team status</th></tr></thead><tbody>${exp.map(e=>`<tr class="link" data-team="#nba-${e.t.id.toLowerCase()}"><td>${esc(e.n)}</td><td style="font-family:var(--body)">${e.t.name}</td><td>${e.age}</td><td>${fm(e.s,2)}</td><td><span class="chip" style="background:${TIER_COL[nbaTier(e.t.payroll).k]}">${nbaTier(e.t.payroll).short}</span></td></tr>`).join('')}</tbody></table></div>
+  <div class="tablewrap"><table class="tb"><thead><tr><th>Player</th><th>Team</th><th>Age</th><th>2026-27 salary</th><th>Team status</th></tr></thead><tbody>${exp.map(e=>`<tr class="link" data-team="#nba-${e.t.id.toLowerCase()}"><td>${esc(e.n)}</td><td style="font-family:var(--body)">${TL('nba',e.t)}</td><td>${e.age}</td><td>${fm(e.s,2)}</td><td><span class="chip" style="background:${TIER_COL[nbaTier(e.t.payroll).k]}">${nbaTier(e.t.payroll).short}</span></td></tr>`).join('')}</tbody></table></div>
   <h2>Exceptions available</h2><p class="note">Mid-level, bi-annual and traded player exceptions each team still holds; TPEs let a team absorb salary without matching.</p><div class="tiles">${NBA.map(t=>`<a class="tile" href="${P(`nba-${t.id.toLowerCase()}`)}" style="--c:${nbaStatusColor(t)}"><div class="ab">${t.id}</div><div class="nm" style="font-size:13px">${t.name}</div><div class="v" style="font-family:var(--body);font-size:12px;color:var(--ink2)">${esc(t.exc)}</div></a>`).join('')}</div>
   <h2 style="color:var(--nfl)">NFL: the road to March 2027</h2><p class="lede" style="font-size:15px">The NFL trade deadline passed on November 10. The next hard date is the start of the 2027 league year in March, when every team must be under the cap. These teams have the most work to do.</p>
-  <div class="tablewrap"><table class="tb"><thead><tr><th>Team</th><th>2027 space</th><th>2027 effective</th><th>Signed for 2027</th><th>2026 space (rollover)</th></tr></thead><tbody>${crunch.map(t=>`<tr class="link" data-team="#nfl-${t.id.toLowerCase()}"><td>${t.name}</td><td class="${cls(t.space27)}">${fm(t.space27)}</td><td class="${cls(t.eff27)}">${fm(t.eff27)}</td><td>${t.n27}</td><td>${fm(t.space)}</td></tr>`).join('')}</tbody></table></div>
+  <div class="tablewrap"><table class="tb"><thead><tr><th>Team</th><th>2027 space</th><th>2027 effective</th><th>Signed for 2027</th><th>2026 space (rollover)</th></tr></thead><tbody>${crunch.map(t=>`<tr class="link" data-team="#nfl-${t.id.toLowerCase()}"><td>${TL('nfl',t)}</td><td class="${cls(t.space27)}">${fm(t.space27)}</td><td class="${cls(t.eff27)}">${fm(t.eff27)}</td><td>${t.n27}</td><td>${fm(t.space)}</td></tr>`).join('')}</tbody></table></div>
   <p class="note">Unused 2026 space can roll over and offset part of the gap.</p>`;}
 
 /* ================= COMPARE ================= */
@@ -678,7 +687,7 @@ function route(){if(timer){clearInterval(timer);timer=null}hideTip();
   else if(view==='deadline'){app.innerHTML=viewDeadline();startCountdown()}
   else if(view==='compare'){app.innerHTML=viewCompare()}
   if(!team)document.title=({nba:'NBA Salary Cap 2026-27: All 30 Team Payrolls — Capanomics',nfl:"NFL Salary Cap 2026: All 32 Teams' Cap Space — Capanomics",trade:'NBA Trade Machine 2026-27 — Capanomics',deadline:'NBA Trade Deadline Tracker 2027 — Capanomics',compare:'NBA vs NFL Salary Cap Compared — Capanomics'})[view]||'Capanomics — NBA & NFL Salary Cap Explorer';
-  $$('#app tr[data-team]').forEach(el=>el.onclick=()=>go(el.dataset.team));
+  $$('#app tr[data-team]').forEach(el=>el.onclick=e=>{if(!e.target.closest('a'))go(el.dataset.team)});
   scrollTo(0,0);}
 if(/^#(home|nba|nfl|trade|deadline|compare|(nba|nfl)-[a-z]+)$/i.test(location.hash))history.replaceState(null,'',P(location.hash.slice(1)));
 document.addEventListener('click',e=>{const a=e.target.closest('a[href^="/"]');if(!a||e.defaultPrevented||e.button!==0||e.metaKey||e.ctrlKey||e.shiftKey||e.altKey||a.target)return;e.preventDefault();const u=a.getAttribute('href');if(u!==location.pathname)history.pushState(null,'',u);route()});
