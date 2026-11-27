@@ -1,4 +1,4 @@
-# Capanomics
+# Cap Mechanics
 
 NBA and NFL salary cap explorer: every team's cap situation, contracts, a trade machine and a deadline tracker, explained in plain English.
 

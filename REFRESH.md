@@ -1,11 +1,11 @@
-# Capanomics data refresh procedure
+# Cap Mechanics data refresh procedure
 
 This is the procedure the scheduled refresh follows. A human can run it too.
 Goal: keep `data/` current, publish only when `scripts/validate.py` passes.
 
 ## 0. Setup
-- Repo: `Capanomics/Capanomics`, branch `main`. Pushing to `main` redeploys capanomics.com on Vercel.
-- Work in a fresh clone. Commit as `Capanomics Data Bot <noreply@capanomics.com>`.
+- Repo: `Capanomics/Capanomics`, branch `main`. Pushing to `main` redeploys capmechanics.com on Vercel.
+- Work in a fresh clone. Commit as `Cap Mechanics Data Bot <noreply@capmechanics.com>`.
 
 ## 1. Pick the mode
 - **Full refresh** (re-read every team page): on Sundays, and every day during hot periods:

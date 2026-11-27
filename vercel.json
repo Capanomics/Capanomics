@@ -1,5 +1,29 @@
 {
   "buildCommand": "",
   "outputDirectory": "public",
-  "cleanUrls": true
+  "cleanUrls": true,
+  "redirects": [
+    {
+      "source": "/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "capanomics.com"
+        }
+      ],
+      "destination": "https://www.capmechanics.com/:path*",
+      "permanent": true
+    },
+    {
+      "source": "/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "www.capanomics.com"
+        }
+      ],
+      "destination": "https://www.capmechanics.com/:path*",
+      "permanent": true
+    }
+  ]
 }
