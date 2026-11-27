@@ -1,4 +1,4 @@
-# Capanomics
+# Cap Mechanics
 
 Static NBA/NFL salary cap site deployed by Vercel from `public/`.
 

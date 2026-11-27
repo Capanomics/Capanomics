@@ -3,12 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Arizona Cardinals Salary Cap 2026 — Cap Space &amp; Dead Money | Capanomics</title>
+<title>Arizona Cardinals Salary Cap 2026 — Cap Space &amp; Dead Money | Cap Mechanics</title>
 <meta name="description" content="Arizona Cardinals salary cap 2026: $7.6M cap space, $104.0M dead money, $95.2M projected 2027 space. Player cap hits and dead money. Updated 2026-11-27.">
-<link rel="canonical" href="https://capanomics.com/nfl/arizona-cardinals">
-<meta property="og:title" content="Arizona Cardinals Salary Cap 2026 — Cap Space &amp; Dead Money | Capanomics">
+<link rel="canonical" href="https://capmechanics.com/nfl/arizona-cardinals">
+<meta property="og:title" content="Arizona Cardinals Salary Cap 2026 — Cap Space &amp; Dead Money | Cap Mechanics">
 <meta property="og:description" content="Arizona Cardinals salary cap 2026: $7.6M cap space, $104.0M dead money, $95.2M projected 2027 space. Player cap hits and dead money. Updated 2026-11-27.">
-<meta property="og:url" content="https://capanomics.com/nfl/arizona-cardinals">
+<meta property="og:url" content="https://capmechanics.com/nfl/arizona-cardinals">
 <meta property="og:type" content="website">
 <meta name="twitter:card" content="summary">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -179,7 +179,7 @@ footer a{color:var(--ink2)}
 </head>
 <body>
 <header class="top"><div class="wrap">
-  <a class="brand" href="/">Capanomics</a>
+  <a class="brand" href="/">Cap Mechanics</a>
   <nav class="tabs">
     <a href="/" data-v="home">Home</a>
     <a href="/nba" data-v="nba">NBA</a>
@@ -681,12 +681,12 @@ function route(){if(timer){clearInterval(timer);timer=null}hideTip();
   if(view==='home'){app.innerHTML=viewHome();mountHome()}
   else if(view==='nba'){app.innerHTML=viewNBA();mountNBA()}
   else if(view==='nfl'){app.innerHTML=viewNFL();mountNFL()}
-  else if(view==='nbateam'){app.innerHTML=viewNbaTeam(team);mountNbaTeam(team);document.title=team.name+' Salary Cap 2026-27 — Payroll & Contracts | Capanomics'}
-  else if(view==='nflteam'){app.innerHTML=viewNflTeam(team);document.title=team.name+' Salary Cap 2026 — Cap Space & Dead Money | Capanomics'}
+  else if(view==='nbateam'){app.innerHTML=viewNbaTeam(team);mountNbaTeam(team);document.title=team.name+' Salary Cap 2026-27 — Payroll & Contracts | Cap Mechanics'}
+  else if(view==='nflteam'){app.innerHTML=viewNflTeam(team);document.title=team.name+' Salary Cap 2026 — Cap Space & Dead Money | Cap Mechanics'}
   else if(view==='trade'){app.innerHTML=viewTrade();mountTrade()}
   else if(view==='deadline'){app.innerHTML=viewDeadline();startCountdown()}
   else if(view==='compare'){app.innerHTML=viewCompare()}
-  if(!team)document.title=({nba:'NBA Salary Cap 2026-27: All 30 Team Payrolls — Capanomics',nfl:"NFL Salary Cap 2026: All 32 Teams' Cap Space — Capanomics",trade:'NBA Trade Machine 2026-27 — Capanomics',deadline:'NBA Trade Deadline Tracker 2027 — Capanomics',compare:'NBA vs NFL Salary Cap Compared — Capanomics'})[view]||'Capanomics — NBA & NFL Salary Cap Explorer';
+  if(!team)document.title=({nba:'NBA Salary Cap 2026-27: All 30 Team Payrolls — Cap Mechanics',nfl:"NFL Salary Cap 2026: All 32 Teams' Cap Space — Cap Mechanics",trade:'NBA Trade Machine 2026-27 — Cap Mechanics',deadline:'NBA Trade Deadline Tracker 2027 — Cap Mechanics',compare:'NBA vs NFL Salary Cap Compared — Cap Mechanics'})[view]||'Cap Mechanics — NBA & NFL Salary Cap Explorer';
   $$('#app tr[data-team]').forEach(el=>el.onclick=e=>{if(!e.target.closest('a'))go(el.dataset.team)});
   scrollTo(0,0);}
 if(/^#(home|nba|nfl|trade|deadline|compare|(nba|nfl)-[a-z]+)$/i.test(location.hash))history.replaceState(null,'',P(location.hash.slice(1)));
