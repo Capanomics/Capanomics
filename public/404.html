@@ -380,7 +380,7 @@ function viewHome(){
   const tiles=(arr,lg)=>arr.map(t=>{const c=lg==='nba'?nbaStatusColor(t):nflStatusColor(t);const v=lg==='nba'?`${fm(t.payroll)} · ${nbaTier(t.payroll).short}`:`${fm(t.space)} now · ${fm(t.eff27)} '27`;return `<a class="tile" href="${P(`${lg}-${t.id.toLowerCase()}`)}" style="--c:${c}"><div class="ab">${t.id} · ${lg==='nba'?t.conf:t.conf}</div><div class="nm">${t.name}</div><div class="v">${v}</div></a>`}).join('');
   return `
   <section class="hero"><div class="kicker" style="color:var(--ink2)">Updated ${new Date(DATA.asof+'T12:00:00').toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'})}</div>
-  <h1>Every team's money,<br>in one place.</h1>
+  <h1>Follow the money.</h1>
   <p class="lede">Salary caps for all 30 NBA and 32 NFL teams: who has room, who's paying tax, who's in trouble next year, and the rules behind all of it. Pick a league or jump straight to a team.</p></section>
   <div class="grid g2">
     <div class="league" style="--lc:var(--nba)"><div class="kicker" style="color:var(--nba)">NBA · 2026-27 · soft cap</div><h3>Basketball</h3>
