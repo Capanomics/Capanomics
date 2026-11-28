@@ -57,7 +57,21 @@ nav.tabs a.on{color:var(--ink);border-bottom-color:var(--ink)}
 nav.tabs a[data-v=nba].on{color:var(--nba);border-bottom-color:var(--nba)}
 nav.tabs a[data-v=nfl].on{color:var(--nfl);border-bottom-color:var(--nfl)}
 .jump{margin-left:auto;display:flex;gap:8px;align-items:center}
-.jump select{font-size:13.5px;border:1px solid var(--rule);background:var(--card);padding:8px 12px;border-radius:var(--r-sm);color:var(--ink);max-width:240px}
+.srch{position:relative;display:flex;align-items:center;width:290px}
+.srch>svg{position:absolute;left:11px;width:16px;height:16px;color:var(--ink3);pointer-events:none}
+.srch input{width:100%;font:inherit;font-size:14px;border:1px solid var(--rule);background:var(--card);color:var(--ink);padding:9px 34px 9px 34px;border-radius:var(--r-sm);outline:none;-webkit-appearance:none;appearance:none}
+.srch input::-webkit-search-cancel-button{display:none}
+.srch input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.srch kbd{position:absolute;right:9px;font:600 11px var(--body);color:var(--ink3);border:1px solid var(--rule);border-radius:5px;padding:1px 6px;pointer-events:none}
+.srch input:focus~kbd,.srch input:not(:placeholder-shown)~kbd{display:none}
+.qres{position:absolute;top:calc(100% + 6px);left:0;right:0;background:var(--card);border:1px solid var(--rule);border-radius:12px;box-shadow:var(--sh-lg);padding:6px;z-index:70;max-height:min(420px,70vh);overflow:auto}
+.qres .qg{font-size:11.5px;font-weight:700;color:var(--ink3);padding:8px 10px 4px}
+.qres a{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;text-decoration:none;color:var(--ink)}
+.qres a .dot{width:10px;height:10px;border-radius:3px;flex:none}
+.qres a .qn{font-weight:600;font-size:14px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.qres a .qm{font-size:12.5px;color:var(--ink3);white-space:nowrap}
+.qres a.on,.qres a:hover{background:var(--rule2)}
+.qres .qe{padding:12px 10px;color:var(--ink2);font-size:13.5px}
 .theme{width:38px;height:38px;border-radius:var(--r-sm);border:1px solid var(--rule);background:var(--card);color:var(--ink);display:grid;place-items:center;cursor:pointer;padding:0;flex:none}
 .theme:hover{border-color:var(--ink3)}
 .theme svg{width:18px;height:18px}
@@ -193,7 +207,7 @@ table.cmp td:first-child{font-weight:600;width:18%}
 footer{border-top:1px solid var(--rule);margin-top:72px;padding:32px 0 56px;font-size:13px;color:var(--ink2);background:var(--card)}
 footer ol{padding-left:18px;columns:2;column-gap:30px}
 footer a{color:var(--ink2)}
-@media(max-width:760px){footer ol{columns:1}.rung{grid-template-columns:1fr;gap:4px}.jump{margin-left:0;width:100%}.jump select{max-width:none;flex:1}nav.tabs a{padding:10px 8px 9px;margin-bottom:0}.thead{padding:22px 20px 20px;border-radius:14px}}
+@media(max-width:760px){footer ol{columns:1}.rung{grid-template-columns:1fr;gap:4px}.jump{margin-left:0;width:100%}.srch{flex:1;width:auto}nav.tabs a{padding:10px 8px 9px;margin-bottom:0}.thead{padding:22px 20px 20px;border-radius:14px}}
 .tldr{background:var(--card);border:1px solid var(--rule);border-radius:var(--r);padding:18px 24px 8px;margin:0 0 14px}
 .tldr-h{font-size:15px;font-weight:800;font-stretch:110%;color:var(--ink);margin-bottom:4px}
 .tl-row{display:grid;grid-template-columns:140px 1fr;gap:16px;padding:10px 0;border-top:1px solid var(--rule2);font-size:15.5px;line-height:1.6}
@@ -240,7 +254,7 @@ svg text:not([fill]){fill:var(--ink)}
     <a href="/compare" data-v="compare">Compare</a>
     <a href="/glossary" data-v="glossary">Glossary</a>
   </nav>
-  <div class="jump"><select id="jump" aria-label="Jump to a team"></select><button class="theme" id="themeBtn" type="button" aria-label="Switch to night mode" title="Night mode"><svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg><svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4.5"/><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"/></svg></button></div>
+  <div class="jump"><div class="srch" role="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="q" type="search" placeholder="Find a team or player" autocomplete="off" spellcheck="false" role="combobox" aria-expanded="false" aria-controls="qres" aria-autocomplete="list" aria-label="Find a team or player"><kbd>/</kbd><div id="qres" class="qres" role="listbox" hidden></div></div><button class="theme" id="themeBtn" type="button" aria-label="Switch to night mode" title="Night mode"><svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg><svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4.5"/><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"/></svg></button></div>
 </div></header>
 <main class="wrap" id="app"><h1>Sidy Cissoko contract &amp; salary</h1><p>SG, age 22, <a href="/nba/portland-trail-blazers">Portland Trail Blazers</a>. Data as of 2026-11-28.</p><h2>The short version</h2><p><b>The deal:</b> Sidy Cissoko is on an <span class="term" data-term="expiring" tabindex="0" role="button">expiring contract</span>: $2.5M this season, then he becomes <span class="term" data-term="rfa" tabindex="0" role="button">a restricted free agent</span> in summer 2027.</p><p><b>Cap impact:</b> $2.5M this season is 1.5% of the <span class="term" data-term="nba_cap" tabindex="0" role="button">salary cap</span> and 1% of the Trail Blazers' payroll: the 350th-highest salary of the 436 NBA players under contract.</p><p><b>Trade math:</b> At $2.5M, he's easy to move: almost any team can fit him with a minimum-sized salary going back.</p><h2>Salary by season</h2><ul><li>2026-27: $2.50M</li></ul></main>
 <div class="tip" id="tip"></div>
@@ -392,7 +406,7 @@ function viewHome(){
   return `
   <section class="hero"><div class="kicker" style="color:var(--ink2)">Updated ${new Date(DATA.asof+'T12:00:00').toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'})}</div>
   <h1>Follow the money.</h1>
-  <p class="lede">Salary caps for all 30 NBA and 32 NFL teams: who has room, who's paying tax, who's in trouble next year, and the rules behind all of it. Pick a league or jump straight to a team.</p></section>
+  <p class="lede">Salary caps for all 30 NBA and 32 NFL teams: who has room, who's paying tax, who's in trouble next year, and the rules behind all of it. Pick a league, or search for any team or player up top.</p></section>
   <div class="grid g2">
     <div class="league" style="--lc:var(--nba)"><div class="kicker" style="color:var(--nba)">NBA · 2026-27 · soft cap</div><h3>Basketball</h3>
       <div class="rowstats"><div><div class="l">Salary cap</div><div class="n">$164.961M</div></div><div><div class="l">Taxpayers</div><div class="n">${taxTeams.length} teams</div></div><div><div class="l">Est. tax bill</div><div class="n">${fm(totalTax,0)}</div></div><div><div class="l">Payroll range</div><div class="n">${fm(lowest.payroll,0)}–${fm(highest.payroll,0)}</div></div></div>
@@ -824,9 +838,41 @@ $('#themeBtn').onclick=()=>{const d=!isDark();document.documentElement.dataset.t
 syncThemeBtn();
 
 /* ================= router ================= */
-const jump=$('#jump');
-jump.innerHTML=`<option value="">Jump to a team…</option><optgroup label="NBA">${NBA.map(t=>`<option value="nba-${t.id.toLowerCase()}">${t.name}</option>`).join('')}</optgroup><optgroup label="NFL">${NFL.map(t=>`<option value="nfl-${t.id.toLowerCase()}">${t.name}</option>`).join('')}</optgroup>`;
-jump.onchange=()=>{if(jump.value)go(jump.value)};
+/* ================= search ================= */
+const fold=x=>x.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[.'’]/g,'');
+const SIDX=[
+  ...NBA.map(t=>({k:'team',lg:'nba',n:t.name,meta:'NBA team',key:'nba-'+t.id.toLowerCase(),c:teamCol('nba',t.id),x:t.id})),
+  ...NFL.map(t=>({k:'team',lg:'nfl',n:t.name,meta:'NFL team',key:'nfl-'+t.id.toLowerCase(),c:teamCol('nfl',t.id),x:t.id})),
+  ...NBAP.map(p=>({k:'player',lg:'nba',n:p.n,meta:`NBA · ${p.tid} · ${fm(p.s[0])}`,key:'nbap-'+p.slug,c:teamCol('nba',p.tid),v:p.s[0]})),
+  ...NFL.flatMap(t=>t.p.map(r=>({k:'player',lg:'nfl',n:r[0],meta:`NFL · ${t.id} · ${fm(r[1])}`,key:'nfl-'+t.id.toLowerCase(),c:teamCol('nfl',t.id),v:r[1]})))
+].map(e=>({...e,f:fold(e.n),w:fold(e.n).split(/[\s-]+/)}));
+function searchFor(q){q=fold(q.trim());if(!q)return[];const parts=q.split(/\s+/);
+  return SIDX.map(e=>{let sc=0;
+    if(e.k==='team'&&(e.x.toLowerCase()===q))sc=100;
+    else if(e.f.startsWith(q))sc=85;
+    else if(e.w.some(w=>w.startsWith(q)))sc=84;
+    else if(parts.every(p=>e.w.some(w=>w.startsWith(p))))sc=70;
+    else if(q.length>=4&&e.f.includes(q))sc=50;
+    if(!sc)return null;return {e,sc:sc+(e.k==='team'?5:0)+(e.v?Math.min(e.v,60)/30:0)}})
+    .filter(Boolean).sort((a,b)=>b.sc-a.sc).slice(0,10).map(r=>r.e)}
+const qi=$('#q'),qr=$('#qres');let qsel=0,qhits=[];
+function qclose(){qr.hidden=true;qi.setAttribute('aria-expanded','false')}
+function qrender(){const q=qi.value;qhits=searchFor(q);qsel=0;
+  if(!q.trim()){qclose();return}
+  qr.innerHTML=qhits.length?qhits.map((e,i)=>`${i===0||qhits[i-1].k!==e.k?`<div class="qg">${e.k==='team'?'Teams':'Players'}</div>`:''}<a href="${P(e.key)}" role="option" id="qo${i}" class="${i===qsel?'on':''}" data-i="${i}"><i class="dot" style="background:${e.c}"></i><span class="qn">${esc(e.n)}</span><span class="qm">${e.meta}</span></a>`).join('')
+    :`<div class="qe">No team or player matches “${esc(q)}”.</div>`;
+  qr.hidden=false;qi.setAttribute('aria-expanded','true');qi.setAttribute('aria-activedescendant',qhits.length?'qo0':'')}
+function qmove(d){if(!qhits.length)return;qsel=(qsel+d+qhits.length)%qhits.length;qr.querySelectorAll('a').forEach((a,i)=>a.classList.toggle('on',i===qsel));const el=$('#qo'+qsel);el.scrollIntoView({block:'nearest'});qi.setAttribute('aria-activedescendant','qo'+qsel)}
+function qgo(i){const e=qhits[i];if(!e)return;qi.value='';qclose();qi.blur();go(e.key)}
+qi.addEventListener('input',qrender);
+qi.addEventListener('focus',()=>{if(qi.value.trim())qrender()});
+qi.addEventListener('keydown',e=>{if(e.key==='ArrowDown'){e.preventDefault();qmove(1)}else if(e.key==='ArrowUp'){e.preventDefault();qmove(-1)}
+  else if(e.key==='Enter'){e.preventDefault();qgo(qsel)}else if(e.key==='Escape'){qi.value='';qclose();qi.blur()}});
+qr.addEventListener('mousedown',e=>{const a=e.target.closest('a[data-i]');if(a){e.preventDefault();if(e.metaKey||e.ctrlKey||e.button===1)return;qgo(+a.dataset.i)}});
+qr.addEventListener('click',e=>{const a=e.target.closest('a[data-i]');if(a&&!(e.metaKey||e.ctrlKey))e.preventDefault()});
+document.addEventListener('click',e=>{if(!e.target.closest('.srch'))qclose()});
+document.addEventListener('keydown',e=>{if(e.key==='/'&&!/input|textarea|select/i.test(document.activeElement.tagName)){e.preventDefault();qi.focus()}});
+
 function route(){if(timer){clearInterval(timer);timer=null}hideTip();closeTerm();
   const h=keyFromPath();let view='home',team=null,lg=null;
   const m=h.match(/^(nba|nfl)-([a-z]+)$/);let player=null;
@@ -835,7 +881,7 @@ function route(){if(timer){clearInterval(timer);timer=null}hideTip();closeTerm()
   else if(['nba','nfl','trade','deadline','compare','glossary','home'].includes(h))view=h;
   document.body.className=view.startsWith('nba')||view==='trade'?'nba':view.startsWith('nfl')?'nfl':'';
   const navKey=view==='nbateam'||view==='nbaplayer'?'nba':view==='nflteam'?'nfl':view;$$('nav.tabs a').forEach(a=>a.classList.toggle('on',a.dataset.v===navKey));
-  jump.value=team?h:'';
+
   const app=$('#app');
   if(view==='home'){app.innerHTML=viewHome();mountHome()}
   else if(view==='nba'){app.innerHTML=viewNBA();mountNBA()}
