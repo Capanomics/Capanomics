@@ -50,6 +50,18 @@ GLOSSARY = {
     "bae": ("Bi-annual exception", "NBA",
             "A smaller signing allowance (about $5.5M) that teams below the first apron can use every other year to "
             "add a free agent while over the cap."),
+    "ufa": ("Unrestricted free agent (UFA)", "NBA",
+            "A player whose contract has ended and who can sign with any team. His old team gets no chance to match."),
+    "rfa": ("Restricted free agent (RFA)", "NBA",
+            "Usually a young player coming off his rookie deal. He can sign an offer sheet with any team, but his "
+            "current team can match it and keep him."),
+    "trade_kicker": ("Trade kicker", "NBA",
+                     "A bonus written into some contracts that pays the player extra, up to 15% of the money left on "
+                     "his deal, if he's traded. It can raise his salary for cap and trade-matching purposes."),
+    "stretch": ("Stretch provision", "NBA",
+                "When a team waives a player during the season, this season's salary stays on the cap as normal, but "
+                "the money owed in later seasons can be spread evenly over twice the remaining years plus one. "
+                "Expiring deals can't be stretched, and stretched money can't exceed 15% of the cap."),
     "expiring": ("Expiring contract", "NBA",
                  "A contract in its final season. It's valuable in trades: the acquiring team gets matching salary "
                  "now with no long-term commitment."),
@@ -280,7 +292,84 @@ def nfl_summary(t, rank, rank27):
     return [["Where they stand", stand], ["Dead money", dead_txt], ["Looking ahead", ahead]]
 
 
-def add_explainers(data, T):
+NBA_YRS = ["2026-27", "2027-28", "2028-29", "2029-30", "2030-31"]
+
+
+def pslug(name):
+    import unicodedata, re
+    a = unicodedata.normalize("NFKD", name).encode("ascii", "ignore").decode().lower()
+    return re.sub(r"[^a-z0-9]+", "-", a).strip("-")
+
+
+def match_in(o, M):
+    """Most salary a team below the first apron can take back for o outgoing (2023 CBA bands)."""
+    return 2 * o + 0.25 if o <= M["t1"] else (o + M["t1"] if o <= M["t2"] else 1.25 * o + 0.25)
+
+
+def min_out(S, M):
+    lo, hi = 0.0, S
+    for _ in range(60):
+        mid = (lo + hi) / 2
+        lo, hi = (lo, mid) if match_in(mid, M) >= S else (mid, hi)
+    return hi
+
+
+def nba_player_summary(pl, t, T, M, n_players):
+    s, nm = pl["s"], H.escape(pl["n"])
+    last = H.escape(pl["n"].split()[-1] if pl["n"].split()[-1] not in ("Jr.", "Jr", "II", "III", "IV") else pl["n"].split()[-2])
+    yrs = [i for i, v in enumerate(s) if v is not None]
+    n_yrs, total = len(yrs), sum(v for v in s if v is not None)
+    end = NBA_YRS[yrs[-1]]
+    fa_year = 2027 + yrs[-1]
+    fa_t = {"UFA": g("ufa", "an unrestricted free agent"), "RFA": g("rfa", "a restricted free agent")}.get(
+        pl.get("fa"), "a free agent")
+    if n_yrs == 1:
+        deal = (f"{nm} is on an {g('expiring', 'expiring contract')}: {m(s[0])} this season, then he becomes "
+                f"{fa_t} in summer {fa_year}.")
+    else:
+        deal = (f"{nm} is owed {m(total)} over {n_yrs} seasons, running through {end}. He becomes {fa_t} in "
+                f"summer {fa_year}.")
+    if pl.get("kick"):
+        deal += f" His deal includes a {pl['kick']:g}% {g('trade_kicker', 'trade kicker')}."
+    rk = pl["rank"]
+    rank_txt = ("the biggest salary in the NBA" if rk == 1 else
+                f"the {ordinal(rk)}-highest salary of the {n_players} NBA players under contract")
+    impact = (f"{m(s[0])} this season is {s[0] / T['cap'] * 100:.1f}% of the {g('nba_cap', 'salary cap')} and "
+              f"{s[0] / t['tp'] * 100:.0f}% of the {poss(nick(t['name']))} payroll: {rank_txt}.")
+    S = s[0]
+    if S < 3:
+        trade = (f"At {m(S)}, he's easy to move: almost any team can fit him with a minimum-sized salary going back.")
+    else:
+        o = min_out(S, M)
+        trade = (f"A team over the cap but below the {g('apron1', 'first apron')} would need to send out at least "
+                 f"{m(o)} in salary to take him in. Above the first apron, it's dollar for dollar: at least {m(S)}.")
+    return [["The deal", deal], ["Cap impact", impact], ["Trade math", trade]]
+
+
+def nba_players(data, T, M):
+    rows = []
+    for t in data["nba"]:
+        for r in t["p"]:
+            if r[3] is None:
+                continue
+            rows.append({"n": r[0], "tid": t["id"], "pos": r[1], "age": r[2], "s": r[3:8],
+                         "fa": t.get("fa", {}).get(r[0]), "kick": t.get("kick", {}).get(r[0])})
+    rows.sort(key=lambda p: -p["s"][0])
+    seen = {}
+    for i, p in enumerate(rows):
+        p["rank"] = i + 1
+        sl = pslug(p["n"])
+        if sl in seen:
+            sl = f"{sl}-{p['tid'].lower()}"
+        seen[sl] = 1
+        p["slug"] = sl
+    by_id = {t["id"]: t for t in data["nba"]}
+    for p in rows:
+        p["sum"] = nba_player_summary(p, by_id[p["tid"]], T, M, len(rows))
+    return rows
+
+
+def add_explainers(data, T, M=None):
     """Attach summaries and the glossary to the site data."""
     nba_rank = {t["id"]: i + 1 for i, t in enumerate(sorted(data["nba"], key=lambda t: -t["tp"]))}
     nfl_rank = {t["id"]: i + 1 for i, t in enumerate(sorted(data["nfl"], key=lambda t: -t["space"]))}
@@ -289,5 +378,7 @@ def add_explainers(data, T):
         t["sum"] = nba_summary(t, T, data["asof"], nba_rank[t["id"]])
     for t in data["nfl"]:
         t["sum"] = nfl_summary(t, nfl_rank[t["id"]], nfl_rank27[t["id"]])
+    if M:
+        data["nbaPlayers"] = nba_players(data, T, M)
     data["glossary"] = {k: list(v) for k, v in GLOSSARY.items()}
     return data

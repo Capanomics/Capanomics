@@ -19,7 +19,7 @@ meta = load("meta.json"); hc = load("nba", "_hardcaps.json"); lg = load("nfl", "
 nba = []
 for id, name, conf, div, rep in NBA_META:
     d = load("nba", id + ".json")
-    nba.append({"id": id, "name": name, "conf": conf, "div": div, "rep": bool(rep), "tp": d["tp"], "p": d["p"], "tw": d["tw"], "exc": d["exc"], "dead": d["dead"], "hc": hc[id]})
+    nba.append({"id": id, "name": name, "conf": conf, "div": div, "rep": bool(rep), "tp": d["tp"], "p": d["p"], "tw": d["tw"], "exc": d["exc"], "dead": d["dead"], "hc": hc[id], "fa": d.get("fa", {}), "kick": d.get("kick", {})})
 nfl = []
 for id, name, conf, div in NFL_META:
     d = load("nfl", id + ".json"); L = lg[id]

@@ -270,8 +270,9 @@ const tip=$('#tip');
 function showTip(e,html){tip.innerHTML=html;tip.style.display='block';tip.style.left=Math.min(e.clientX+14,innerWidth-290)+'px';tip.style.top=(e.clientY+14)+'px'}
 function hideTip(){tip.style.display='none'}
 const slug=n=>n.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
-const P=h=>{h=String(h).toLowerCase().replace(/^#/,'');const m=h.match(/^(nba|nfl)-([a-z]+)$/);if(m){const t=(m[1]==='nba'?NBA:NFL).find(x=>x.id.toLowerCase()===m[2]);return t?`/${m[1]}/${slug(t.name)}`:'/'}return h==='home'||!h?'/':'/'+h};
+const P=h=>{h=String(h).toLowerCase().replace(/^#/,'');if(h.startsWith('nbap-'))return '/nba/player/'+h.slice(5);const m=h.match(/^(nba|nfl)-([a-z]+)$/);if(m){const t=(m[1]==='nba'?NBA:NFL).find(x=>x.id.toLowerCase()===m[2]);return t?`/${m[1]}/${slug(t.name)}`:'/'}return h==='home'||!h?'/':'/'+h};
 const keyFromPath=()=>{const seg=location.pathname.toLowerCase().replace(/\.html$/,'').replace(/\/index$/,'').split('/').filter(Boolean);
+  if(seg.length===3&&seg[0]==='nba'&&seg[1]==='player')return NBAP_BY_SLUG[seg[2]]?'nbap-'+seg[2]:'nba';
   if(seg.length===2&&(seg[0]==='nba'||seg[0]==='nfl')){const t=(seg[0]==='nba'?NBA:NFL).find(x=>slug(x.name)===seg[1]||x.id.toLowerCase()===seg[1]);return t?seg[0]+'-'+t.id.toLowerCase():'home'}
   return seg[0]||'home'};
 const TM=(k,txt)=>DATA.glossary[k]?`<span class="term" data-term="${k}" tabindex="0" role="button">${txt}</span>`:txt;
@@ -535,7 +536,7 @@ function viewNbaTeam(t){const T=NBA_T,p=t.payroll,tr=nbaTier(p),tx=nbaTax(p,t.re
   </div>`;}
 function mountNbaTeam(t){let sortI=0,dir=-1;const T=NBA_T;
   const draw=()=>{const rows=t.p.slice().sort((a,b)=>{if(sortI==='n')return dir*a[0].localeCompare(b[0]);if(sortI==='a')return dir*(a[2]-b[2]);return dir*((a[3+sortI]||0)-(b[3+sortI]||0))});
-    $('#roster tbody').innerHTML=rows.map(r=>`<tr><td>${esc(r[0])}${r[4]==null?' <span class="chip" style="background:#94a3b8;font-size:9.5px">expiring</span>':''}</td><td>${r[1]}</td><td>${r[2]}</td>${[0,1,2,3,4].map(i=>`<td class="${r[3+i]==null?'dim':''}">${r[3+i]==null?'—':fm(r[3+i],2)}</td>`).join('')}<td>${(r[3]/T.cap*100).toFixed(1)}%</td></tr>`).join('');};
+    $('#roster tbody').innerHTML=rows.map(r=>`<tr><td>${PL(t.id,r[0])}${r[4]==null?' <span class="chip" style="background:#94a3b8;font-size:9.5px">expiring</span>':''}</td><td>${r[1]}</td><td>${r[2]}</td>${[0,1,2,3,4].map(i=>`<td class="${r[3+i]==null?'dim':''}">${r[3+i]==null?'—':fm(r[3+i],2)}</td>`).join('')}<td>${(r[3]/T.cap*100).toFixed(1)}%</td></tr>`).join('');};
   draw();$$('#roster th.s').forEach(th=>th.onclick=()=>{const i=th.dataset.i;const ni=isNaN(+i)?i:+i;if(sortI===ni)dir*=-1;else{sortI=ni;dir=ni==='n'?1:-1}draw()});
   $('#toTrade').onclick=()=>{state.tradeA=t.id;state.selA=new Set();if(state.tradeB===t.id)state.tradeB=t.id==='BKN'?'MEM':'BKN';state.selB=new Set()};}
 
@@ -731,6 +732,52 @@ function viewCompare(){const rows=[['Cap type','<b>Soft cap.</b> Teams may excee
 const SOURCES=[['NBA sets Salary Cap for 2026-27 — NBA Communications','https://pr.nba.com/2026-27-salary-cap/'],['NBA team cap sheets and rosters, Nov 2026 — JJNBA','https://jjnba.com/'],['NBA teams with hard caps for 2026-27 — Hoops Rumors via Yardbarker','https://www.yardbarker.com/nba/articles/nba_teams_with_hard_caps_for_202627/s1_14822_44048142'],['NBA trade rules and 2026-27 salary matching — Legion Report','https://legionreport.com/nba-trade-rules-explained/'],['2027 NBA trade deadline set for Feb 11 — Hoops Rumors via Yardbarker','https://www.yardbarker.com/nba/articles/2027_nba_trade_deadline_set_for_february_11/s1_14822_44140863'],['Tax aprons glossary — Hoops Rumors','https://www.hoopsrumors.com/2025/01/hoops-rumors-glossary-tax-aprons-2.html'],['Luxury tax penalties glossary — Hoops Rumors','https://www.hoopsrumors.com/2024/11/hoops-rumors-glossary-luxury-tax-penalties-4.html'],['NFL announces 2026 salary cap of $301.2M — NFL.com','https://amp.nfl.com/news/nfl-announces-2026-salary-cap-set-at-301-2-million-per-team'],['NFL salary cap space, 2026 & 2027 — Over The Cap','https://overthecap.com/salary-cap-space'],['NFL team salary cap pages — Over The Cap','https://overthecap.com/salary-cap/detroit-lions'],['2026-27 NFL important dates — NFL.com','https://www.nfl.com/_amp/2026-27-national-football-league-important-dates'],['2026 franchise & transition tag values — NBC Sports','https://www.nbcsports.com/nfl/profootballtalk/rumor-mill/news/nfl-announces-franchise-tag-transition-tag-values-for-2026'],['NFL CBA Art. 12: minimum cash spending — Over The Cap','https://overthecap.com/collective-bargaining-agreement/article/12/section/9/(b)/']];
 $('#foot').innerHTML=`<p><b>About the data.</b> NBA payrolls and rosters come from JJNBA team cap sheets as of ${DATA.asof}; tax bills are estimates assuming payroll holds through season's end. Hard-cap status comes from JJNBA's tracking and a July 2026 Hoops Rumors report. NFL team figures and player cap hits come from Over The Cap as of ${DATA.asof}; 2027 figures are projections. NFL player tables show the top cap hits, not every contract. Trackers count holds, incentives and dead money slightly differently, so small differences from other sites are normal.</p><h3 style="margin-top:16px">Sources</h3><ol>${SOURCES.map(([t,u])=>`<li><a href="${u}">${esc(t)}</a></li>`).join('')}</ol>`;
 
+/* ================= NBA player pages ================= */
+const NBAP=DATA.nbaPlayers,NBAP_BY_SLUG=Object.fromEntries(NBAP.map(p=>[p.slug,p])),NBAP_BY_KEY=Object.fromEntries(NBAP.map(p=>[p.tid+'|'+p.n,p]));
+const PL=(tid,name)=>{const p=NBAP_BY_KEY[tid+'|'+name];return p?`<a class="tl" href="/nba/player/${p.slug}">${esc(name)}</a>`:esc(name)};
+let PSUM=null;
+function loadPlayerSummaries(slug){if(PSUM)return;fetch('/nba/player-summaries.json').then(r=>r.json()).then(j=>{PSUM=j;const el=$('#plSum');if(el&&j[slug])el.innerHTML=tldr({sum:j[slug]})}).catch(()=>{})}
+function minOut(S){let lo=0,hi=S;for(let i=0;i<60;i++){const m=(lo+hi)/2;if(matchAllowed(m)>=S)hi=m;else lo=m}return hi}
+function viewNbaPlayer(pl){const T=NBA_T,t=nbaById[pl.tid],S=pl.s[0];
+  const yrs=pl.s.map((v,i)=>[NBA_YRS[i],v,NBA_CAPS[i]]).filter(r=>r[1]!=null);
+  const total=yrs.reduce((a,r)=>a+r[1],0),faYear=2027+pl.s.map(v=>v!=null).lastIndexOf(true);
+  const col=teamCol('nba',t.id);
+  const faTxt=pl.fa==='RFA'?TM('rfa','RFA'):pl.fa==='UFA'?TM('ufa','UFA'):'Free agent';
+  /* trade scenarios */
+  const after=t.payroll-S,billNow=nbaTax(t.payroll,t.rep).bill,billAfter=nbaTax(after,t.rep).bill;
+  const o=minOut(S);
+  const trade=`<div class="grid g3" style="margin-top:12px">
+    <div class="card"><h3>Team over the cap, below the ${TM('apron1','first apron')}</h3><p>Must send out at least <b>${fm(o)}</b> in salary to take him in under the ${TM('salary_match','salary-matching')} rules.</p></div>
+    <div class="card"><h3>Team above the first apron</h3><p>Dollar for dollar: at least <b>${fm(S)}</b> going back.${S>=3?` Above the ${TM('apron2','second apron')}, it has to be a single player making that much, since salaries can't be combined.`:''}</p></div>
+    <div class="card"><h3>What the ${t.name.split(' ').slice(-1)[0]} save</h3><p>Moving him for no salary back would cut their payroll to <b>${fm(after)}</b>${billNow>0?(billAfter<.05?`, wiping out their estimated ${fm(billNow)} tax bill`:` and their estimated tax bill from ${fm(billNow)} to <b>${fm(billAfter)}</b>`):''}.</p></div></div>
+    ${pl.kick?`<p class="note" style="margin-top:10px">He has a ${pl.kick}% ${TM('trade_kicker','trade kicker')}, so a trade could raise his salary and the matching numbers above.</p>`:''}`;
+  /* waiver scenarios (in-season: this year stays, later years can be stretched over 2N+1 seasons) */
+  const fut=yrs.slice(1),N=fut.length,futTot=fut.reduce((a,r)=>a+r[1],0),per=N?futTot/(2*N+1):0;
+  const wRows=[];for(let i=0;i<Math.max(yrs.length,N?2*N+2:1);i++){const lab=i<5?NBA_YRS[i]:`${2026+i}-${String(27+i).slice(-2)}`;
+    const keep=i<yrs.length?yrs[i][1]:null,str=i===0?yrs[0][1]:(N&&i<=2*N+1?per:null);wRows.push([lab,keep,str])}
+  const capLim=.15*T.cap;
+  const waive=N?`<p class="story" style="margin-top:8px">If he's waived this season, his ${fm(S)} for 2026-27 stays on the books either way. The ${fm(futTot)} owed after this season can stay on its normal schedule, or be ${TM('stretch','stretched')} into ${fm(per,2)} a year over ${2*N+1} seasons.</p>
+    <div class="tablewrap" style="margin-top:10px"><table class="tb"><thead><tr><th>Season</th><th>Waived, not stretched</th><th>Waived and stretched</th></tr></thead><tbody>${wRows.map(([l,k,s2])=>`<tr><td>${l}</td><td class="${k==null?'dim':''}">${k==null?'—':fm(k,2)}</td><td class="${s2==null?'dim':''}">${s2==null?'—':fm(s2,2)}</td></tr>`).join('')}</tbody></table></div>
+    <p class="note">Assumes every remaining season is fully guaranteed; options or non-guaranteed money would lower these figures.${per>capLim?` At ${fm(per)} a year, stretching him alone would go past the 15% limit on stretched money (${fm(capLim)}).`:''}</p>`
+    :`<p class="story" style="margin-top:8px">He's on an expiring deal, so waiving him now would simply leave his ${fm(S)} on this season's books. Expiring contracts can't be ${TM('stretch','stretched')} once the season starts.</p>`;
+  const mates=NBAP.filter(p=>p.tid===t.id&&p!==pl).sort((a,b)=>b.s[0]-a.s[0]);
+  return `<div class="crumb"><a href="/">Home</a> / <a href="/nba">NBA</a> / <a href="${P('nba-'+t.id.toLowerCase())}">${t.name}</a> / ${esc(pl.n)}</div>
+  <div class="thead" style="${teamHead('nba',t.id)}"><div><div class="kicker">${pl.pos} · Age ${pl.age} · <a href="${P('nba-'+t.id.toLowerCase())}" style="color:inherit">${t.name}</a></div><div class="tn">${esc(pl.n)}</div></div>
+    <div class="chips"><span class="chip out">No. ${pl.rank} salary in the NBA</span>${yrs.length===1?`<span class="chip out">${TM('expiring','Expiring')}</span>`:''}${pl.kick?`<span class="chip out">${TM('trade_kicker','Trade kicker')}&nbsp;${pl.kick}%</span>`:''}</div></div>
+  <div id="plSum">${PSUM?tldr({sum:PSUM[pl.slug]}):''}</div>
+  <div class="grid g4">
+    <div class="stat"><div class="lab">2026-27 ${TM('cap_hit','cap hit')}</div><div class="val">${fm(S,2)}</div><div class="sm">No. ${pl.rank} of ${NBAP.length} in the NBA</div></div>
+    <div class="stat"><div class="lab">Share of the cap</div><div class="val">${(S/T.cap*100).toFixed(1)}%</div><div class="sm">${(S/t.payroll*100).toFixed(1)}% of team payroll</div></div>
+    <div class="stat"><div class="lab">Owed from here</div><div class="val">${fm(total)}</div><div class="sm">${yrs.length} season${yrs.length>1?'s':''}, through ${yrs[yrs.length-1][0]}</div></div>
+    <div class="stat"><div class="lab">Free agency</div><div class="val">${faYear}</div><div class="sm">${faTxt} in summer ${faYear}</div></div>
+  </div>
+  <h2>Contract by season</h2><p class="note">Salary each season. Caps after 2026-27 (marked *) are league projections.</p>
+  <div class="chart">${barsSvg(yrs.map(([y,v,c])=>[y,v,col]),{h:220,min:420})}</div>
+  <div class="tablewrap" style="margin-top:12px"><table class="tb"><thead><tr><th>Season</th><th>Salary</th><th>Projected cap</th><th>% of cap</th></tr></thead><tbody>${yrs.map(([y,v,c],i)=>`<tr><td>${y}</td><td>${fm(v,2)}</td><td>${fm(c,1)}${i?'*':''}</td><td>${(v/c*100).toFixed(1)}%</td></tr>`).join('')}<tr class="tot"><td>Total</td><td>${fm(total,2)}</td><td></td><td></td></tr></tbody></table></div>
+  <h2>If he's traded</h2><p class="note">What another team has to send back to take on his ${fm(S)} salary this season.</p>${trade}
+  <h2>If he's waived</h2>${waive}
+  <h2>${t.name} teammates</h2><div class="tiles" style="margin-top:12px">${mates.map(p=>`<a class="tile" href="/nba/player/${p.slug}" style="--c:${col};--tc:${col}"><div class="ab">${p.pos} · No. ${p.rank} in NBA</div><div class="nm">${esc(p.n)}</div><div class="v">${fm(p.s[0],2)}${p.s[1]==null?' · expiring':''}</div></a>`).join('')}</div>`}
+
 /* ================= night mode ================= */
 function syncThemeBtn(){const d=isDark(),b=$('#themeBtn');b.setAttribute('aria-label',d?'Switch to day mode':'Switch to night mode');b.title=d?'Day mode':'Night mode'}
 $('#themeBtn').onclick=()=>{const d=!isDark();document.documentElement.dataset.theme=d?'dark':'light';try{localStorage.setItem('cm-theme',d?'dark':'light')}catch(e){}
@@ -743,23 +790,25 @@ jump.innerHTML=`<option value="">Jump to a team…</option><optgroup label="NBA"
 jump.onchange=()=>{if(jump.value)go(jump.value)};
 function route(){if(timer){clearInterval(timer);timer=null}hideTip();closeTerm();
   const h=keyFromPath();let view='home',team=null,lg=null;
-  const m=h.match(/^(nba|nfl)-([a-z]+)$/);
-  if(m){lg=m[1];team=(lg==='nba'?nbaById:nflById)[m[2].toUpperCase()];view=team?lg+'team':'home'}
+  const m=h.match(/^(nba|nfl)-([a-z]+)$/);let player=null;
+  if(h.startsWith('nbap-')){player=NBAP_BY_SLUG[h.slice(5)];view=player?'nbaplayer':'nba'}
+  else if(m){lg=m[1];team=(lg==='nba'?nbaById:nflById)[m[2].toUpperCase()];view=team?lg+'team':'home'}
   else if(['nba','nfl','trade','deadline','compare','glossary','home'].includes(h))view=h;
   document.body.className=view.startsWith('nba')||view==='trade'?'nba':view.startsWith('nfl')?'nfl':'';
-  const navKey=view==='nbateam'?'nba':view==='nflteam'?'nfl':view;$$('nav.tabs a').forEach(a=>a.classList.toggle('on',a.dataset.v===navKey));
+  const navKey=view==='nbateam'||view==='nbaplayer'?'nba':view==='nflteam'?'nfl':view;$$('nav.tabs a').forEach(a=>a.classList.toggle('on',a.dataset.v===navKey));
   jump.value=team?h:'';
   const app=$('#app');
   if(view==='home'){app.innerHTML=viewHome();mountHome()}
   else if(view==='nba'){app.innerHTML=viewNBA();mountNBA()}
   else if(view==='nfl'){app.innerHTML=viewNFL();mountNFL()}
   else if(view==='nbateam'){app.innerHTML=viewNbaTeam(team);mountNbaTeam(team);document.title=team.name+' Salary Cap 2026-27 — Payroll & Contracts | Cap Mechanics'}
+  else if(view==='nbaplayer'){app.innerHTML=viewNbaPlayer(player);loadPlayerSummaries(player.slug);document.title=player.n+' Contract & Salary 2026-27 — '+nbaById[player.tid].name+' | Cap Mechanics'}
   else if(view==='nflteam'){app.innerHTML=viewNflTeam(team);document.title=team.name+' Salary Cap 2026 — Cap Space & Dead Money | Cap Mechanics'}
   else if(view==='trade'){app.innerHTML=viewTrade();mountTrade()}
   else if(view==='deadline'){app.innerHTML=viewDeadline();startCountdown()}
   else if(view==='compare'){app.innerHTML=viewCompare()}
   else if(view==='glossary'){app.innerHTML=viewGlossary()}
-  if(!team)document.title=({nba:'NBA Salary Cap 2026-27: All 30 Team Payrolls — Cap Mechanics',nfl:"NFL Salary Cap 2026: All 32 Teams' Cap Space — Cap Mechanics",trade:'NBA Trade Machine 2026-27 — Cap Mechanics',deadline:'NBA Trade Deadline Tracker 2027 — Cap Mechanics',compare:'NBA vs NFL Salary Cap Compared — Cap Mechanics',glossary:'Salary Cap Glossary: NBA & NFL Cap Terms Explained — Cap Mechanics'})[view]||'Cap Mechanics — NBA & NFL Salary Cap Explorer';
+  if(!team&&!player)document.title=({nba:'NBA Salary Cap 2026-27: All 30 Team Payrolls — Cap Mechanics',nfl:"NFL Salary Cap 2026: All 32 Teams' Cap Space — Cap Mechanics",trade:'NBA Trade Machine 2026-27 — Cap Mechanics',deadline:'NBA Trade Deadline Tracker 2027 — Cap Mechanics',compare:'NBA vs NFL Salary Cap Compared — Cap Mechanics',glossary:'Salary Cap Glossary: NBA & NFL Cap Terms Explained — Cap Mechanics'})[view]||'Cap Mechanics — NBA & NFL Salary Cap Explorer';
   $$('#app tr[data-team]').forEach(el=>el.onclick=e=>{if(!e.target.closest('a'))go(el.dataset.team)});
   scrollTo(0,0);}
 if(/^#(home|nba|nfl|trade|deadline|compare|glossary|(nba|nfl)-[a-z]+)$/i.test(location.hash))history.replaceState(null,'',P(location.hash.slice(1)));

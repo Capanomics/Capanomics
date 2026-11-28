@@ -26,7 +26,10 @@ from explain import add_explainers, GLOSSARY  # noqa: E402
 app = open(os.path.join(ROOT, "src", "app.html")).read()
 T = dict(re.findall(r"(\w+):([\d.]+)", re.search(r"const NBA_T = \{([^}]*)\}", app).group(1)))
 T = {k: float(v) for k, v in T.items()}
-DATA = add_explainers(json.load(open(os.path.join(ROOT, "data.json"))), T)
+M = {k: float(v) for k, v in re.findall(r"(t\d):([\d.]+)", re.search(r"const MATCH = \{([^}]*)\}", app).group(1))}
+DATA = add_explainers(json.load(open(os.path.join(ROOT, "data.json"))), T, M)
+# Player summaries are big; keep them out of the inlined data and serve them as a separate file.
+PSUM = {p["slug"]: p.pop("sum") for p in DATA["nbaPlayers"]}
 data_txt = json.dumps(DATA, separators=(",", ":"), ensure_ascii=False)
 app = app.replace("__DATA__", data_txt.replace("</", "<\\/"), 1)
 DEFAULT_TITLE = "Cap Mechanics — NBA &amp; NFL Salary Cap Explorer"
@@ -110,6 +113,7 @@ pages.append(("/glossary", "Salary Cap Glossary: NBA & NFL Cap Terms Explained �
 pages.append(("/compare", "NBA vs NFL Salary Cap Compared — Cap Mechanics",
               "How the NBA's soft cap and luxury tax compare with the NFL's hard cap.", "<h1>NBA vs NFL salary cap</h1>", "compare.html"))
 
+pslug_of = {(p["tid"], p["n"]): p["slug"] for p in DATA["nbaPlayers"]}
 for t in DATA["nba"]:
     s, n = slug(t["name"]), t["name"]
     top = sorted(t["p"], key=lambda r: -(r[3] or 0))[:5]
@@ -118,8 +122,24 @@ for t in DATA["nba"]:
     body = (f"<h1>{H.escape(n)} salary cap 2026-27</h1>"
             f"<p>The {H.escape(n)} have a 2026-27 payroll of {m(t['tp'])}, {nba_tier(t['tp'])} "
             f"(cap {m(T['cap'])}, tax line {m(T['tax'])}). Data as of {asof}.</p>" + summary_html(t["sum"]) +
-            "<h2>Biggest contracts</h2>" + ul(f"{H.escape(r[0])} — {m(r[3])}" for r in top))
+            "<h2>Biggest contracts</h2>" + ul(f"<a href=\"/nba/player/{pslug_of[(t['id'], r[0])]}\">{H.escape(r[0])}</a> — {m(r[3])}" for r in top if (t['id'], r[0]) in pslug_of))
     pages.append((f"/nba/{s}", f"{n} Salary Cap 2026-27 — Payroll & Contracts | Cap Mechanics", desc, body, f"nba/{s}.html"))
+
+YRS = ["2026-27", "2027-28", "2028-29", "2029-30", "2030-31"]
+nba_by_id = {t["id"]: t for t in DATA["nba"]}
+for pl in DATA["nbaPlayers"]:
+    t = nba_by_id[pl["tid"]]
+    n, ps = pl["n"], pl["slug"]
+    yrs = [(YRS[i], v) for i, v in enumerate(pl["s"]) if v is not None]
+    total = sum(v for _, v in yrs)
+    desc = (f"{n} contract and salary: {m(pl['s'][0])} in 2026-27 with the {t['name']}, {m(total)} over "
+            f"{len(yrs)} season{'s' if len(yrs) > 1 else ''} through {yrs[-1][0]}. Cap hit, trade and waiver scenarios.")
+    body = (f"<h1>{H.escape(n)} contract &amp; salary</h1>"
+            f"<p>{H.escape(pl['pos'])}, age {pl['age']}, <a href=\"/nba/{slug(t['name'])}\">{H.escape(t['name'])}</a>. "
+            f"Data as of {asof}.</p>" + summary_html(PSUM[pl["slug"]]) +
+            "<h2>Salary by season</h2>" + ul(f"{y}: ${v:.2f}M" for y, v in yrs))
+    pages.append((f"/nba/player/{ps}", f"{n} Contract & Salary 2026-27 — {t['name']} | Cap Mechanics", desc, body,
+                  f"nba/player/{ps}.html"))
 
 for t in DATA["nfl"]:
     s, n = slug(t["name"]), t["name"]
@@ -140,6 +160,7 @@ p404 = page("/", "Page not found — Cap Mechanics", "Page not found.", "<h1>Pag
 p404 = p404.replace('<link rel="canonical" href="https://www.capmechanics.com/">', '<meta name="robots" content="noindex">', 1)
 assert 'noindex' in p404
 write("404.html", p404)
+write("nba/player-summaries.json", json.dumps(PSUM, separators=(",", ":"), ensure_ascii=False))
 write("sitemap.xml", '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
       + "".join(f"  <url><loc>{SITE}{'/' if p[0] == '/' else p[0]}</loc><lastmod>{asof}</lastmod></url>\n" for p in pages)
       + "</urlset>\n")
