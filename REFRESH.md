@@ -85,3 +85,5 @@ Set `data/meta.json` `asof` to today's date (America/New_York) before building.
 
 ## 7. Report
 End with a short summary: mode, teams refreshed, notable changes (e.g. a team crossing the tax line or an apron, a big release creating dead money), and PASS/FAIL. Notable changes are content ideas.
+
+**Also save the report in the repo** so later sessions can read it: write it to `reports/YYYY-MM-DD.md` (append a `## <time> run` section if the file already exists), and include it in the same commit and push as the data, whether that goes to main or to a `data-held-*` branch. Include: mode, teams refreshed, careers added/remaining, dead-money backfill counts, anything skipped and why, any step that failed with its exact error, and PASS/FAIL.
