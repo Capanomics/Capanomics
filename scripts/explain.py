@@ -95,8 +95,9 @@ GLOSSARY = {
                     "spreading the money over future years, which creates room now but pushes costs (and potential "
                     "dead money) into later seasons."),
     "eff_space": ("Effective cap space", "NFL",
-                  "Cap space after setting money aside to fill out a full roster with minimum-salary players. A "
-                  "truer measure of what a team can actually spend on free agents."),
+                  "Cap space after a team signs at least 51 players and its draft class. In the offseason only the 51 "
+                  "biggest cap hits count, so teams with fewer than 51 signed, or with draft picks to pay, have less "
+                  "to spend than their plain cap space suggests."),
     "cap_hit": ("Cap hit", "Both",
                 "How much a player's contract counts against the cap in a given season. In the NFL it's salary plus "
                 "the year's share of bonuses, so it can differ a lot from the cash he's paid."),
