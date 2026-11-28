@@ -61,6 +61,9 @@ def nba_tier(p):
     return "above the second apron"
 
 
+CRUMBS = {}
+
+
 def page(path, title, desc, body_html):
     url = SITE + ("/" if path == "/" else path)
     t, d = H.escape(title), H.escape(desc)
@@ -68,7 +71,12 @@ def page(path, title, desc, body_html):
             f"<link rel=\"canonical\" href=\"{url}\">\n"
             f"<meta property=\"og:title\" content=\"{t}\">\n<meta property=\"og:description\" content=\"{d}\">\n"
             f"<meta property=\"og:url\" content=\"{url}\">\n<meta property=\"og:type\" content=\"website\">\n"
-            f"<meta name=\"twitter:card\" content=\"summary\">")
+            f"<meta name=\"twitter:card\" content=\"summary\">\n<meta property=\"og:site_name\" content=\"Cap Mechanics\">")
+    crumbs = CRUMBS.get(path)
+    if crumbs:
+        ld = {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [
+            {"@type": "ListItem", "position": i + 1, "name": n, "item": SITE + p} for i, (n, p) in enumerate(crumbs)]}
+        head += "\n<script type=\"application/ld+json\">" + json.dumps(ld, ensure_ascii=False).replace("</", "<\\/") + "</script>"
     out = app.replace(f"<title>{DEFAULT_TITLE}</title>", head, 1)
     # Crawlable summary inside #app; the app replaces it on load.
     out = out.replace('<main class="wrap" id="app"></main>', f'<main class="wrap" id="app">{body_html}</main>', 1)
@@ -118,6 +126,7 @@ pages.append(("/compare", "NBA vs NFL Salary Cap Compared — Cap Mechanics",
 
 pslug_of = {(p["tid"], p["n"]): p["slug"] for p in DATA["nbaPlayers"]}
 nfl_by_id = {t["id"]: t for t in DATA["nfl"]}
+nflp_slug = {(p["tid"], p["n"]): p["slug"] for p in NFLP}
 for pl in NFLP:
     t = nfl_by_id[pl["tid"]]
     n = pl["n"]
@@ -167,9 +176,23 @@ for t in DATA["nfl"]:
             f"<p>The {H.escape(n)} have {m(t['space'])} in 2026 cap space, {m(t['active'])} in active contracts "
             f"and {m(t['dead'])} in dead money. Projected 2027 cap space: {m(t.get('space27'))}. Data as of {asof}.</p>" + summary_html(t["sum"]) +
             "<h2>Biggest cap hits</h2>" + ul(f"{H.escape(r[0])} — {m(r[1])}" for r in top) +
+            (("<h2>Player contracts</h2>" + ul(f"<a href=\"/nfl/player/{nflp_slug[(t['id'], r[0])]}\">{H.escape(r[0])}</a> — "
+               f"{m(r[1])} cap hit" for r in t["p"] if (t["id"], r[0]) in nflp_slug)) if any((t["id"], r[0]) in nflp_slug for r in t["p"]) else "") +
             "<h2>Largest dead money</h2>" + ul(f"{H.escape(r[0])} — {m(r[1])}" for r in sorted(t.get("deadList", []), key=lambda r: -r[1])[:5]))
     pages.append((f"/nfl/{s}", f"{n} Salary Cap 2026 — Cap Space & Dead Money | Cap Mechanics", desc, body, f"nfl/{s}.html"))
 
+_tname = {f"/nba/{slug(t['name'])}": t["name"] for t in DATA["nba"]}
+_tname.update({f"/nfl/{slug(t['name'])}": t["name"] for t in DATA["nfl"]})
+_pteam = {f"/nba/player/{p['slug']}": (f"/nba/{slug(nba_by_id[p['tid']]['name'])}", p["n"]) for p in DATA["nbaPlayers"]}
+_pteam.update({f"/nfl/player/{p['slug']}": (f"/nfl/{slug(nfl_by_id[p['tid']]['name'])}", p["n"]) for p in NFLP})
+for _p, *_ in pages:
+    lg = _p.split("/")[1] if _p.count("/") >= 1 else ""
+    base = [("Home", "/")] + ([(lg.upper(), f"/{lg}")] if lg in ("nba", "nfl") else [])
+    if _p in _tname:
+        CRUMBS[_p] = base + [(_tname[_p], _p)]
+    elif _p in _pteam:
+        tp, pn = _pteam[_p]
+        CRUMBS[_p] = base + [(_tname[tp], tp), (pn, _p)]
 for path, title, desc, body, rel in pages:
     write(rel, page(path, title, desc, body))
 # Unknown URLs fall back to the home view.
