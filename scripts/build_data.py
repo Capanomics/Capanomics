@@ -27,5 +27,7 @@ for id, name, conf, div in NFL_META:
                 "space27": L["space27"], "eff27": L["eff27"], "active27": L["active27"], "dead27": L["dead27"], "n27": L["n27"],
                 "adj": round(L["space"] + L["active"] + L["dead"], 3), "p": d["p"], "deadList": d["dead"], "t": d["t"], "no27": d.get("no27", False)})
 out = {"asof": meta["asof"], "nba": sorted(nba, key=lambda t: t["name"]), "nfl": sorted(nfl, key=lambda t: t["name"])}
+cp = os.path.join(root, "data", "nba", "_careers.json")
+out["careers"] = json.load(open(cp)) if os.path.exists(cp) else {}
 json.dump(out, open(os.path.join(root, "data.json"), "w"), separators=(",", ":"), ensure_ascii=False)
 print("data.json", os.path.getsize(os.path.join(root, "data.json")), "bytes, asof", meta["asof"])

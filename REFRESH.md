@@ -58,6 +58,15 @@ Build the file from both: `p` = active rows (cap27 copied from the existing file
 
 **Dead-money backfill (every mode, including quick check).** After step 3, for each NFL team where the `dead` entries in `data/nfl/<TEAM>.json` sum to more than $0.5M below `dead` in `_league.json`, run **pass 2 only** for that team, largest shortfall first, every such team in the same run. **Skip a team whose file has `dead_src` within $0.1M of its current `dead` in `_league.json`**: its list was already filled against that total, and Over The Cap doesn't itemize the smallest charges, so re-reading it won't close the gap. Replace only the file's `dead` list, and only if the new rows sum to no more than `dead_total` + $0.1M and to more than the existing rows; otherwise leave the list alone. Either way, set the file's `dead_src` to that team's current `_league.json` `dead`, so the team is retried only after its total changes. Keep `p` and `t` untouched in this step. The site shows any remaining gap as "Not itemized yet", so a partial list is fine. Mention in the report how many teams were backfilled and how many still have gaps.
 
+## 4b. NBA career earnings backfill (every run, any mode)
+`data/nba/_careers.json` maps `"Player Name|TEAM"` (name and team exactly as in `data/nba/<TEAM>.json`) to `{"e": career NBA earnings in $M through 2025-26, "thru": "2025-26", "src": page URL, "asof": date}`. Player pages show a Career earnings section only for players with an entry.
+
+Each run, take up to **30** players with a 2026-27 salary and no entry, highest 2026-27 salary first. For each:
+1. WebSearch (allowed domain `basketball-reference.com`, standard mode): `<Player Name> has made at least playing professional basketball`.
+2. Use the result for that player's main page (`/players/<x>/<id>.html`, title "<Name> Stats, Height, Weight…"). Its snippet reads "<Name> has made at least $X playing professional basketball" and usually "<Name> made $Y in 2026". Record `e` = X in $M (2 decimals) **only if** the snippet also shows "made $Y in 2026" (so 2025-26 is included). If the 2026 line is missing, or the page is clearly a different player, skip him this run.
+3. Rookies drafted in 2026 have no earnings before this season: record `e: 0`.
+Never change existing entries except at the season rollover (section 6). Note in the report how many were added and how many remain.
+
 ## 5. Build, check, publish
 ```
 python3 scripts/build.py      # data/ -> data.json -> public/ (one page per team)
@@ -68,6 +77,7 @@ Set `data/meta.json` `asof` to today's date (America/New_York) before building.
 - **FAIL**: do not push to `main`. Push the work to a branch `data-held-YYYY-MM-DD` instead, and report which checks failed.
 
 ## 6. Stop and ask a human when
+- **Season rollover (July):** besides new caps, every `_careers.json` entry needs the finished season's salary added to `e` and `thru` advanced. Do this as part of the human-reviewed season change, not in a routine run.
 - The NBA salary cap on JJNBA is no longer $164.96M (new season: constants in `src/app.html` need updating), or the OTC 2026 base cap is no longer $301.2M.
 - A source changed its layout and the JSON can't be extracted.
 - Validation fails two days in a row.

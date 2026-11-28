@@ -329,6 +329,9 @@ def nba_player_summary(pl, t, T, M, n_players):
     else:
         deal = (f"{nm} is owed {m(total)} over {n_yrs} seasons, running through {end}. He becomes {fa_t} in "
                 f"summer {fa_year}.")
+    if pl.get("car"):
+        deal += (f" He'd earned {m(pl['car'])} in his career through last season, so he's on track for "
+                 f"{m(pl['car'] + total)} by the end of this deal.")
     if pl.get("kick"):
         deal += f" His deal includes a {pl['kick']:g}% {g('trade_kicker', 'trade kicker')}."
     rk = pl["rank"]
@@ -352,8 +355,10 @@ def nba_players(data, T, M):
         for r in t["p"]:
             if r[3] is None:
                 continue
+            c = data.get("careers", {}).get(f"{r[0]}|{t['id']}")
             rows.append({"n": r[0], "tid": t["id"], "pos": r[1], "age": r[2], "s": r[3:8],
-                         "fa": t.get("fa", {}).get(r[0]), "kick": t.get("kick", {}).get(r[0])})
+                         "fa": t.get("fa", {}).get(r[0]), "kick": t.get("kick", {}).get(r[0]),
+                         "car": c["e"] if c else None})
     rows.sort(key=lambda p: -p["s"][0])
     seen = {}
     for i, p in enumerate(rows):
