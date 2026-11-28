@@ -30,6 +30,9 @@ M = {k: float(v) for k, v in re.findall(r"(t\d):([\d.]+)", re.search(r"const MAT
 DATA = add_explainers(json.load(open(os.path.join(ROOT, "data.json"))), T, M)
 # Player summaries are big; keep them out of the inlined data and serve them as a separate file.
 PSUM = {p["slug"]: p.pop("sum") for p in DATA["nbaPlayers"]}
+# NFL player details are served per team (loaded on demand); the inlined data keeps only an index.
+NFLP = DATA.pop("nflPlayers", [])
+DATA["nflPIndex"] = [{"n": p["n"], "slug": p["slug"], "tid": p["tid"], "pos": p.get("pos")} for p in NFLP]
 data_txt = json.dumps(DATA, separators=(",", ":"), ensure_ascii=False)
 app = app.replace("__DATA__", data_txt.replace("</", "<\\/"), 1)
 DEFAULT_TITLE = "Cap Mechanics — NBA &amp; NFL Salary Cap Explorer"
@@ -114,6 +117,20 @@ pages.append(("/compare", "NBA vs NFL Salary Cap Compared — Cap Mechanics",
               "How the NBA's soft cap and luxury tax compare with the NFL's hard cap.", "<h1>NBA vs NFL salary cap</h1>", "compare.html"))
 
 pslug_of = {(p["tid"], p["n"]): p["slug"] for p in DATA["nbaPlayers"]}
+nfl_by_id = {t["id"]: t for t in DATA["nfl"]}
+for pl in NFLP:
+    t = nfl_by_id[pl["tid"]]
+    n = pl["n"]
+    real = [y for y in pl["yrs"] if y[2] is not None]
+    desc = (f"{n} contract: {pl.get('hdr', '')}, {m(pl['tv'])} total, {m(pl['fg'])} fully guaranteed. "
+            f"{m(pl['yrs'][0][6])} 2026 cap hit with the {t['name']}; dead money and cap savings if cut or traded.")
+    rows = "".join(f"<li>{y[0]}: cap hit ${y[6]:.2f}M" + (f", base salary ${y[2]:.2f}M" if y[2] is not None else " (void year)") +
+                   f"; dead money if cut before June 1 ${y[7][0]:.2f}M</li>" for y in pl["yrs"])
+    body = (f"<h1>{H.escape(n)} contract &amp; salary cap</h1>"
+            f"<p>{H.escape(pl.get('pos') or '')}, <a href=\"/nfl/{slug(t['name'])}\">{H.escape(t['name'])}</a>. "
+            f"Data as of {asof}.</p>" + summary_html(pl["sum"]) + "<h2>Contract by season</h2><ul>" + rows + "</ul>")
+    pages.append((f"/nfl/player/{pl['slug']}", f"{n} Contract, Cap Hit & Dead Money 2026 — {t['name']} | Cap Mechanics",
+                  desc, body, f"nfl/player/{pl['slug']}.html"))
 for t in DATA["nba"]:
     s, n = slug(t["name"]), t["name"]
     top = sorted(t["p"], key=lambda r: -(r[3] or 0))[:5]
@@ -160,6 +177,9 @@ p404 = page("/", "Page not found — Cap Mechanics", "Page not found.", "<h1>Pag
 p404 = p404.replace('<link rel="canonical" href="https://www.capmechanics.com/">', '<meta name="robots" content="noindex">', 1)
 assert 'noindex' in p404
 write("404.html", p404)
+for _tid in sorted({p["tid"] for p in NFLP}):
+    write(f"nfl/players/{_tid}.json", json.dumps({p["slug"]: p for p in NFLP if p["tid"] == _tid},
+                                                  separators=(",", ":"), ensure_ascii=False))
 write("nba/player-summaries.json", json.dumps(PSUM, separators=(",", ":"), ensure_ascii=False))
 write("sitemap.xml", '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
       + "".join(f"  <url><loc>{SITE}{'/' if p[0] == '/' else p[0]}</loc><lastmod>{asof}</lastmod></url>\n" for p in pages)

@@ -68,6 +68,17 @@ Each run, take up to **30** players with a 2026-27 salary and no entry, highest 
 3. Rookies drafted in 2026 have no earnings before this season: record `e: 0`.
 Never change existing entries except at the season rollover (section 6). Note in the report how many were added and how many remain.
 
+## 4c. NFL player contracts (every run, any mode)
+Player pages exist for teams that have a file in `data/nfl/players/` (currently: see that folder). Each file maps the player's name **exactly as in `data/nfl/<TEAM>.json` `p`** to his contract from his Over The Cap player page:
+
+`{"url": OTC player URL, "pos": "LB", "acc": accrued seasons, "hdr": "Extension, signed 2026", "tv": total value $M, "apy": $M, "fg": fully guaranteed $M, "fa": "2030 Void" (free agency text as shown), "car": career earnings $M, "pot": potential earnings $M, "yrs": [[year, age, base $M or null if Void, prorated signing bonus $M, other bonuses $M (sum of roster/per-game/workout/other columns; null if Void), guaranteed salary $M or null, cap number $M, [dead: cut pre-6/1, cut post-6/1, trade pre-6/1, trade post-6/1], [cap savings in the same order, negative = costs room]], ...], "hist": [[team, type, year signed, years, total $M, APY $M, guarantees $M], ... oldest first]}` — all money in $M with 3 decimals.
+
+Each run, for teams with a players file, take up to **30** players (largest 2026 cap hit first) that either have no entry, or whose entry's 2026 cap number differs from `p`'s 2026 cap hit by more than $0.05M (contract changed). For each:
+1. WebSearch (allowed domain `overthecap.com`): `overthecap <Player Name> contract details salary cap charges`, to find and allow `https://overthecap.com/player/<slug>/<id>`. The team page `/salary-cap/<team>` also links every player.
+2. WebFetch the player page with a plainly worded request for: the current contract header, contract value, APY, fully guaranteed money, accrued seasons, free agency; the current contract table one line per year (Year, Age, Base, Prorated Signing Bonus, each other bonus column, Guaranteed Salary, Cap Number, then the two "Dead Money & Cap Savings" cells of six values each); the contract history; and career earnings / potential earnings. The first four of each six-value cell are cut pre-6/1, cut post-6/1, trade pre-6/1, trade post-6/1 (dead money cell first, cap savings cell second); ignore the last two.
+3. Check before writing: the entry's 2026 cap number must match `p`'s 2026 cap hit within $0.05M, and base + prorated + other ≈ cap number for each non-void year (within $0.05M). If not, skip that player this run and note it.
+Remove entries for players no longer in that team's `p`. Report "NFL players: +N updated, M remaining, skipped …".
+
 ## 5. Build, check, publish
 ```
 python3 scripts/build.py      # data/ -> data.json -> public/ (one page per team)

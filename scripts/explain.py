@@ -101,6 +101,13 @@ GLOSSARY = {
     "cap_hit": ("Cap hit", "Both",
                 "How much a player's contract counts against the cap in a given season. In the NFL it's salary plus "
                 "the year's share of bonuses, so it can differ a lot from the cash he's paid."),
+    "june1": ("Post-June 1 release", "NFL",
+              "When an NFL player is released (or designated) after June 1, only this year's share of his remaining "
+              "bonus money hits this year's cap; the rest moves to next year. Releasing him earlier puts all of it on "
+              "this year's cap at once."),
+    "void": ("Void year", "NFL",
+             "A fake final season added to a contract only to spread signing-bonus money over more years. The "
+             "contract voids before it's played, and any bonus left becomes dead money."),
     "ir": ("Injured reserve (IR)", "NFL",
            "A list for injured players who are out for an extended period. Their contracts still count against the "
            "cap while they're on it."),
@@ -375,6 +382,61 @@ def nba_players(data, T, M):
     return rows
 
 
+NFL_CAP26 = 301.2
+
+
+def nfl_player_summary(p, t):
+    nm = H.escape(p["n"])
+    real = [y for y in p["yrs"] if y[2] is not None]
+    void = [y for y in p["yrs"] if y[2] is None]
+    end = real[-1][0] if real else p["yrs"][-1][0]
+    n_yrs = p["hist"][-1][3] if p.get("hist") else len(real)
+    hdr = H.escape(p.get("hdr") or "")
+    deal = f"{nm} is on a {n_yrs}-year, {m(p['tv'], 2)} deal ({hdr.lower()})"
+    deal += f" with {m(p['fg'], 2)} fully guaranteed." if p.get("fg") else "."
+    deal += f" It runs through the {end} season"
+    deal += (f", plus {len(void)} {g('void', 'void year' + ('s' if len(void) > 1 else ''))} that "
+             f"{'exist' if len(void) > 1 else 'exists'} only to spread bonus money." if void else ".")
+    cur = p["yrs"][0]
+    impact = f"He counts {m(cur[6])} against the 2026 cap ({cur[6] / NFL_CAP26 * 100:.1f}% of the {g('nfl_cap', 'cap')})"
+    nxt = p["yrs"][1] if len(p["yrs"]) > 1 else None
+    if nxt and nxt[2] is not None:
+        diff = nxt[6] - cur[6]
+        impact += (f", jumping to {m(nxt[6])} in 2027." if diff > 3 else
+                   f", dropping to {m(nxt[6])} in 2027." if diff < -3 else f" and {m(nxt[6])} in 2027.")
+    else:
+        impact += ". This is the last real season of his deal."
+    if nxt and nxt[2] is not None:
+        d_pre, d_post = nxt[7][0], nxt[7][1]
+        s_pre, s_post = nxt[8][0], nxt[8][1]
+        def sv(v):
+            return f"save {m(v)}" if v > 0.05 else ("save nothing" if v > -0.05 else f"cost {m(-v)} of cap room")
+        cut = (f"Releasing him next offseason before June 1 would leave {m(d_pre)} of {g('dead', 'dead money')} on the "
+               f"2027 cap and {sv(s_pre)}. As a {g('june1', 'post-June 1')} release, 2027 would carry {m(d_post)} "
+               f"(the rest moves to 2028) and {sv(s_post)}.")
+    else:
+        cut = (f"His contract ends after this season, so the {H.escape(nick(t['name']))} can simply let him walk: "
+               f"any bonus money left over becomes {g('dead', 'dead money')} in 2027.")
+    return [["The deal", deal], ["Cap impact", impact], ["If he's released", cut]]
+
+
+def nfl_players(data):
+    out = []
+    by_id = {t["id"]: t for t in data["nfl"]}
+    for tid, players in data.get("nflPlayerData", {}).items():
+        t = by_id.get(tid)
+        if not t:
+            continue
+        for row in t["p"]:
+            p = players.get(row[0])
+            if not p or not p.get("yrs"):
+                continue
+            rec = dict(p, n=row[0], tid=tid, slug=pslug(row[0]), st=row[5])
+            rec["sum"] = nfl_player_summary(rec, t)
+            out.append(rec)
+    return out
+
+
 def add_explainers(data, T, M=None):
     """Attach summaries and the glossary to the site data."""
     nba_rank = {t["id"]: i + 1 for i, t in enumerate(sorted(data["nba"], key=lambda t: -t["tp"]))}
@@ -386,5 +448,7 @@ def add_explainers(data, T, M=None):
         t["sum"] = nfl_summary(t, nfl_rank[t["id"]], nfl_rank27[t["id"]])
     if M:
         data["nbaPlayers"] = nba_players(data, T, M)
+    data["nflPlayers"] = nfl_players(data)
+    data.pop("nflPlayerData", None)
     data["glossary"] = {k: list(v) for k, v in GLOSSARY.items()}
     return data

@@ -294,9 +294,10 @@ const tip=$('#tip');
 function showTip(e,html){tip.innerHTML=html;tip.style.display='block';tip.style.left=Math.min(e.clientX+14,innerWidth-290)+'px';tip.style.top=(e.clientY+14)+'px'}
 function hideTip(){tip.style.display='none'}
 const slug=n=>n.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
-const P=h=>{h=String(h).toLowerCase().replace(/^#/,'');if(h.startsWith('nbap-'))return '/nba/player/'+h.slice(5);const m=h.match(/^(nba|nfl)-([a-z]+)$/);if(m){const t=(m[1]==='nba'?NBA:NFL).find(x=>x.id.toLowerCase()===m[2]);return t?`/${m[1]}/${slug(t.name)}`:'/'}return h==='home'||!h?'/':'/'+h};
+const P=h=>{h=String(h).toLowerCase().replace(/^#/,'');if(h.startsWith('nbap-'))return '/nba/player/'+h.slice(5);if(h.startsWith('nflp-'))return '/nfl/player/'+h.slice(5);const m=h.match(/^(nba|nfl)-([a-z]+)$/);if(m){const t=(m[1]==='nba'?NBA:NFL).find(x=>x.id.toLowerCase()===m[2]);return t?`/${m[1]}/${slug(t.name)}`:'/'}return h==='home'||!h?'/':'/'+h};
 const keyFromPath=()=>{const seg=location.pathname.toLowerCase().replace(/\.html$/,'').replace(/\/index$/,'').split('/').filter(Boolean);
   if(seg.length===3&&seg[0]==='nba'&&seg[1]==='player')return NBAP_BY_SLUG[seg[2]]?'nbap-'+seg[2]:'nba';
+  if(seg.length===3&&seg[0]==='nfl'&&seg[1]==='player')return NFLP_BY_SLUG[seg[2]]?'nflp-'+seg[2]:'nfl';
   if(seg.length===2&&(seg[0]==='nba'||seg[0]==='nfl')){const t=(seg[0]==='nba'?NBA:NFL).find(x=>slug(x.name)===seg[1]||x.id.toLowerCase()===seg[1]);return t?seg[0]+'-'+t.id.toLowerCase():'home'}
   return seg[0]||'home'};
 const TM=(k,txt)=>DATA.glossary[k]?`<span class="term" data-term="${k}" tabindex="0" role="button">${txt}</span>`:txt;
@@ -661,7 +662,7 @@ function viewNflTeam(t){const rank=NFL.slice().sort((a,b)=>b.space-a.space).find
 
   <h2>Biggest cap hits</h2><p class="note">The 25 largest 2026 cap numbers on the active roster, plus injured players with $2.5M+ cap hits. Prorated bonus = signing and option bonus money spread over the deal.</p>
   <div class="tablewrap"><table class="tb" id="nflRoster"><thead><tr><th>Player</th><th>Status</th><th>2026 cap hit</th><th>Base salary</th><th>Prorated bonus</th><th>% of cap</th><th>2027 cap hit</th></tr></thead><tbody>
-  ${players.map(r=>`<tr><td>${esc(r[0])}</td><td>${r[5]==='A'?'Active':`<span class="chip" style="background:#dc2626">${r[5]}</span>`}</td><td><b>${fm(r[1],2)}</b></td><td class="${r[2]==null?'dim':''}">${fm(r[2],2)}</td><td class="${r[3]==null?'dim':''}">${fm(r[3],2)}</td><td>${(r[1]/NFL_CAP*100).toFixed(1)}%</td><td class="${r[4]==null?'dim':''}">${t.no27?'n/a':r[4]==null?'—':fm(r[4],2)}</td></tr>`).join('')}
+  ${players.map(r=>`<tr><td>${PLF(t.id,r[0])}</td><td>${r[5]==='A'?'Active':`<span class="chip" style="background:#dc2626">${r[5]}</span>`}</td><td><b>${fm(r[1],2)}</b></td><td class="${r[2]==null?'dim':''}">${fm(r[2],2)}</td><td class="${r[3]==null?'dim':''}">${fm(r[3],2)}</td><td>${(r[1]/NFL_CAP*100).toFixed(1)}%</td><td class="${r[4]==null?'dim':''}">${t.no27?'n/a':r[4]==null?'—':fm(r[4],2)}</td></tr>`).join('')}
   </tbody></table></div>
   ${t.no27?'<p class="note">Player-level 2027 cap hits weren\'t available for this team; team-level 2027 projections above still apply.</p>':'<p class="note">"—" in 2027 means no 2027 cap number is listed: the contract ends or the player is a pending free agent.</p>'}
 
@@ -771,6 +772,41 @@ function capWalk27(t){const C=NFL_CAP27,fill=t.space27-t.eff27,open=Math.max(0,5
   <div class="walk">${rows.map(([l,v,k,d])=>`<div class="wr ${k}"><div class="wl"><b>${l}</b><span>${d}</span></div><div class="wb ${v<0&&k==='total'?'neg':''}">${k==='total'||k==='start'?bar(v):''}</div><div class="wv ${k==='total'?cls(v):''}">${k==='minus'?'−'+fm(-v):fm(v)}</div></div>`).join('')}</div>
   <p class="note">${t.space>0?`Unused 2026 room can ${TM('rollover','roll over')}: if they carry today's ${fm(t.space)} into 2027, both numbers rise by that much. `:''}Projections from Over The Cap; the 2027 cap isn't official until March.</p>`}
 
+/* ================= NFL player pages ================= */
+const NFLPI=DATA.nflPIndex||[],NFLP_BY_SLUG=Object.fromEntries(NFLPI.map(p=>[p.slug,p])),NFLP_BY_KEY=Object.fromEntries(NFLPI.map(p=>[p.tid+'|'+p.n,p]));
+const PLF=(tid,name)=>{const p=NFLP_BY_KEY[tid+'|'+name];return p?`<a class="tl" href="/nfl/player/${p.slug}">${esc(name)}</a>`:esc(name)};
+const NFLPD={};
+function loadNflPlayers(ix){if(NFLPD[ix.tid]){return}fetch('/nfl/players/'+ix.tid+'.json').then(r=>r.json()).then(j=>{NFLPD[ix.tid]=j;
+  const cur=NFLP_BY_SLUG[location.pathname.split('/').pop()];if(cur&&cur.tid===ix.tid)$('#app').innerHTML=viewNflPlayer(cur)}).catch(()=>{const el=$('#nflpBody');if(el)el.innerHTML='<p class="note">Couldn\'t load contract details. Refresh the page to try again.</p>'})}
+function viewNflPlayer(ix){const t=nflById[ix.tid],col=teamCol('nfl',t.id),pl=NFLPD[ix.tid]&&NFLPD[ix.tid][ix.slug];
+  const head=`<div class="crumb"><a href="/">Home</a> / <a href="/nfl">NFL</a> / <a href="${P('nfl-'+t.id.toLowerCase())}">${t.name}</a> / ${esc(ix.n)}</div>
+  <div class="thead" style="${teamHead('nfl',t.id)}"><div><div class="kicker">${esc(ix.pos||'')}${pl&&pl.acc!=null?` · ${pl.acc} accrued season${pl.acc===1?'':'s'}`:''} · <a href="${P('nfl-'+t.id.toLowerCase())}" style="color:inherit">${t.name}</a></div><div class="tn">${esc(ix.n)}</div></div>
+  ${pl?`<div class="chips">${pl.hdr?`<span class="chip out">${esc(pl.hdr)}</span>`:''}${pl.fa?`<span class="chip out">Free agent ${esc(pl.fa)}</span>`:''}${pl.st&&pl.st!=='A'?`<span class="chip" style="background:#dc2626">${esc(pl.st)}</span>`:''}</div>`:''}</div>`;
+  if(!pl)return head+`<div id="nflpBody"><p class="note">Loading contract…</p></div>`;
+  const Y=pl.yrs,cur=Y[0],real=Y.filter(y=>y[2]!=null);
+  const f2=v=>v==null?'<span class="dim">Void</span>':fm(v,2);
+  const sv=v=>`<span class="${v>0.05?'pos':v<-0.05?'neg':''}">${v<0?'−'+fm(-v,2):fm(v,2)}</span>`;
+  const mates=NFLPI.filter(p=>p.tid===t.id&&p!==ix);
+  return head+`${tldr({sum:pl.sum})}
+  <div class="grid g4">
+    <div class="stat"><div class="lab">2026 ${TM('cap_hit','cap hit')}</div><div class="val">${fm(cur[6],2)}</div><div class="sm">${(cur[6]/NFL_CAP*100).toFixed(1)}% of the cap</div></div>
+    <div class="stat"><div class="lab">Contract</div><div class="val">${fm(pl.tv,pl.tv<100?2:1)}</div><div class="sm">${fm(pl.apy,2)} a year</div></div>
+    <div class="stat"><div class="lab">Fully guaranteed</div><div class="val">${fm(pl.fg)}</div><div class="sm">${pl.tv?(pl.fg/pl.tv*100).toFixed(0):0}% of the deal</div></div>
+    <div class="stat"><div class="lab">Career earnings</div><div class="val">${pl.car!=null?fm(pl.car):'—'}</div><div class="sm">${pl.pot!=null?fm(pl.pot)+' if he plays out this deal':''}</div></div>
+  </div>
+  <h2>The whole contract</h2><p class="note">Every season of his current deal, including bonus money spread across the years. ${Y.some(y=>y[2]==null)?TM('void','Void years')+' exist only to spread bonus money and are never played.':''}</p>
+  <div class="chart">${barsSvg(Y.map(y=>[String(y[0]),y[6],y[2]==null?'#94a3b8':col]),{h:220,min:420})}</div>
+  <div class="tablewrap" style="margin-top:12px"><table class="tb"><thead><tr><th>Season</th><th>Age</th><th>Base salary</th><th>${TM('prorated','Prorated bonus')}</th><th>Other bonuses</th><th>Guaranteed salary</th><th>Cap hit</th></tr></thead><tbody>
+  ${Y.map(y=>`<tr><td>${y[0]}${y[2]==null?' <span class="dim">(void)</span>':''}</td><td>${y[1]??''}</td><td>${f2(y[2])}</td><td>${fm(y[3],2)}</td><td>${y[4]==null?'<span class="dim">—</span>':fm(y[4],2)}</td><td>${y[5]==null?'<span class="dim">—</span>':fm(y[5],2)}</td><td><b>${fm(y[6],2)}</b></td></tr>`).join('')}
+  <tr class="tot"><td>Total</td><td></td><td>${fm(real.reduce((a,y)=>a+(y[2]||0),0),2)}</td><td>${fm(Y.reduce((a,y)=>a+y[3],0),2)}</td><td>${fm(Y.reduce((a,y)=>a+(y[4]||0),0),2)}</td><td>${fm(Y.reduce((a,y)=>a+(y[5]||0),0),2)}</td><td>${fm(Y.reduce((a,y)=>a+y[6],0),2)}</td></tr></tbody></table></div>
+  <h2>If he's cut or traded</h2><p class="story" style="margin-top:4px">Releasing or trading a player speeds up his remaining bonus money as ${TM('dead','dead money')}. Before June 1 it all lands on that year's cap; after June 1 (a ${TM('june1','post-June 1')} move), only that year's share does and the rest shifts to the next year. "Cap savings" is how much room the move frees up that year; a negative number means it costs room.</p>
+  <div class="tablewrap" style="margin-top:10px"><table class="tb"><thead><tr><th>League year</th><th>Cut before June 1<br><span class="dim">dead / savings</span></th><th>Cut after June 1<br><span class="dim">dead / savings</span></th><th>Trade before June 1<br><span class="dim">dead / savings</span></th><th>Trade after June 1<br><span class="dim">dead / savings</span></th></tr></thead><tbody>
+  ${Y.filter(y=>y[7]).map(y=>`<tr><td>${y[0]}</td>${[0,1,2,3].map(i=>`<td>${fm(y[7][i],2)} / ${sv(y[8][i])}</td>`).join('')}</tr>`).join('')}</tbody></table></div>
+  <p class="note">The 2026 row assumes a move during the 2026 league year, which ends in March; most real decisions happen at the start of the 2027 league year.</p>
+  ${pl.hist&&pl.hist.length?`<h2>Contract history</h2><div class="tablewrap" style="margin-top:10px"><table class="tb"><thead><tr><th>Team</th><th>Type</th><th>Signed</th><th>Years</th><th>Total value</th><th>Per year</th><th>Guarantees</th></tr></thead><tbody>${pl.hist.slice().reverse().map(h=>`<tr><td>${esc(h[0])}</td><td>${esc(h[1])}</td><td>${h[2]}</td><td>${h[3]}</td><td>${fm(h[4],2)}</td><td>${fm(h[5],2)}</td><td>${fm(h[6],2)}</td></tr>`).join('')}</tbody></table></div>`:''}
+  <p class="note" style="margin-top:12px">Contract data from <a href="${pl.url}" rel="nofollow noopener" target="_blank">Over The Cap</a>.</p>
+  ${mates.length?`<h2>${t.name} teammates</h2><div class="tiles" style="margin-top:12px">${mates.map(p=>`<a class="tile" href="/nfl/player/${p.slug}" style="--c:${col};--tc:${col}"><div class="ab">${esc(p.pos||'')}</div><div class="nm">${esc(p.n)}</div></a>`).join('')}</div>`:''}`}
+
 /* ================= NBA player pages ================= */
 const NBAP=DATA.nbaPlayers,NBAP_BY_SLUG=Object.fromEntries(NBAP.map(p=>[p.slug,p])),NBAP_BY_KEY=Object.fromEntries(NBAP.map(p=>[p.tid+'|'+p.n,p]));
 const PL=(tid,name)=>{const p=NBAP_BY_KEY[tid+'|'+name];return p?`<a class="tl" href="/nba/player/${p.slug}">${esc(name)}</a>`:esc(name)};
@@ -837,7 +873,7 @@ const SIDX=[
   ...NBA.map(t=>({k:'team',lg:'nba',n:t.name,meta:'NBA team',key:'nba-'+t.id.toLowerCase(),c:teamCol('nba',t.id),x:t.id})),
   ...NFL.map(t=>({k:'team',lg:'nfl',n:t.name,meta:'NFL team',key:'nfl-'+t.id.toLowerCase(),c:teamCol('nfl',t.id),x:t.id})),
   ...NBAP.map(p=>({k:'player',lg:'nba',n:p.n,meta:`NBA · ${p.tid} · ${fm(p.s[0])}`,key:'nbap-'+p.slug,c:teamCol('nba',p.tid),v:p.s[0]})),
-  ...NFL.flatMap(t=>t.p.map(r=>({k:'player',lg:'nfl',n:r[0],meta:`NFL · ${t.id} · ${fm(r[1])}`,key:'nfl-'+t.id.toLowerCase(),c:teamCol('nfl',t.id),v:r[1]})))
+  ...NFL.flatMap(t=>t.p.map(r=>({k:'player',lg:'nfl',n:r[0],meta:`NFL · ${t.id} · ${fm(r[1])}`,key:NFLP_BY_KEY[t.id+'|'+r[0]]?'nflp-'+NFLP_BY_KEY[t.id+'|'+r[0]].slug:'nfl-'+t.id.toLowerCase(),c:teamCol('nfl',t.id),v:r[1]})))
 ].map(e=>({...e,f:fold(e.n),w:fold(e.n).split(/[\s-]+/)}));
 function searchFor(q){q=fold(q.trim());if(!q)return[];const parts=q.split(/\s+/);
   return SIDX.map(e=>{let sc=0;
@@ -870,10 +906,11 @@ function route(){if(timer){clearInterval(timer);timer=null}hideTip();closeTerm()
   const h=keyFromPath();let view='home',team=null,lg=null;
   const m=h.match(/^(nba|nfl)-([a-z]+)$/);let player=null;
   if(h.startsWith('nbap-')){player=NBAP_BY_SLUG[h.slice(5)];view=player?'nbaplayer':'nba'}
+  else if(h.startsWith('nflp-')){player=NFLP_BY_SLUG[h.slice(5)];view=player?'nflplayer':'nfl'}
   else if(m){lg=m[1];team=(lg==='nba'?nbaById:nflById)[m[2].toUpperCase()];view=team?lg+'team':'home'}
   else if(['nba','nfl','trade','deadline','compare','glossary','home'].includes(h))view=h;
   document.body.className=view.startsWith('nba')||view==='trade'?'nba':view.startsWith('nfl')?'nfl':'';
-  const navKey=view==='nbateam'||view==='nbaplayer'?'nba':view==='nflteam'?'nfl':view;$$('nav.tabs a').forEach(a=>a.classList.toggle('on',a.dataset.v===navKey));
+  const navKey=view==='nflplayer'?'nfl':view==='nbateam'||view==='nbaplayer'?'nba':view==='nflteam'?'nfl':view;$$('nav.tabs a').forEach(a=>a.classList.toggle('on',a.dataset.v===navKey));
 
   const app=$('#app');
   if(view==='home'){app.innerHTML=viewHome();mountHome()}
@@ -881,6 +918,7 @@ function route(){if(timer){clearInterval(timer);timer=null}hideTip();closeTerm()
   else if(view==='nfl'){app.innerHTML=viewNFL();mountNFL()}
   else if(view==='nbateam'){app.innerHTML=viewNbaTeam(team);mountNbaTeam(team);document.title=team.name+' Salary Cap 2026-27 — Payroll & Contracts | Cap Mechanics'}
   else if(view==='nbaplayer'){app.innerHTML=viewNbaPlayer(player);loadPlayerSummaries(player.slug);document.title=player.n+' Contract & Salary 2026-27 — '+nbaById[player.tid].name+' | Cap Mechanics'}
+  else if(view==='nflplayer'){app.innerHTML=viewNflPlayer(player);document.title=player.n+' Contract, Cap Hit & Dead Money 2026 — '+nflById[player.tid].name+' | Cap Mechanics';loadNflPlayers(player)}
   else if(view==='nflteam'){app.innerHTML=viewNflTeam(team);document.title=team.name+' Salary Cap 2026 — Cap Space & Dead Money | Cap Mechanics'}
   else if(view==='trade'){app.innerHTML=viewTrade();mountTrade()}
   else if(view==='deadline'){app.innerHTML=viewDeadline();startCountdown()}

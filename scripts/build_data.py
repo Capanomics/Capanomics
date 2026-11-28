@@ -29,5 +29,7 @@ for id, name, conf, div in NFL_META:
 out = {"asof": meta["asof"], "nba": sorted(nba, key=lambda t: t["name"]), "nfl": sorted(nfl, key=lambda t: t["name"])}
 cp = os.path.join(root, "data", "nba", "_careers.json")
 out["careers"] = json.load(open(cp)) if os.path.exists(cp) else {}
+import glob as _g
+out["nflPlayerData"] = {os.path.basename(f)[:-5]: json.load(open(f)) for f in sorted(_g.glob(os.path.join(root, "data", "nfl", "players", "[A-Z]*.json")))}
 json.dump(out, open(os.path.join(root, "data.json"), "w"), separators=(",", ":"), ensure_ascii=False)
 print("data.json", os.path.getsize(os.path.join(root, "data.json")), "bytes, asof", meta["asof"])
